@@ -5,7 +5,7 @@
  * @format
  * @flow
  */
-
+// git test
 import React, {Component} from 'react';
 import {AsyncStorage, Platform, StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/EvilIcons';
