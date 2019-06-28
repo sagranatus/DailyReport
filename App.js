@@ -5,7 +5,7 @@
  * @format
  * @flow
  */
-// git test
+
 import React, {Component} from 'react';
 import {AsyncStorage, Platform, StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/EvilIcons';
@@ -15,12 +15,15 @@ import {
   createMaterialTopTabNavigator,
   createAppContainer,
 } from 'react-navigation';
+import { openDatabase } from 'react-native-sqlite-storage'
+var db = openDatabase({ name: 'TableDatabase.db' })
 
 import CalendarPage from './page/CalendarPage';
 import TodayPage from './page/TodayPage';
 import AnalysisPage from './page/AnalysisPage';
 import AddtablePage from './page/AddtablePage';
 import RNPickerSelect from 'react-native-picker-select';
+const tableArray = new Array()
 const tables = [
     {
         label: 'Table1',
@@ -116,20 +119,82 @@ const Container2 = createAppContainer(TabScreen);
 export default class App extends React.Component {
   constructor(props) {
     super(props);
+
+      // DB 테이블 생성
+      db.transaction(function(txn) {
+        txn.executeSql(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='tableinfo'",
+          [],
+          function(tx, res) {
+            if (res.rows.length == 0) {
+              
+              console.log('no data', res.rows.length);
+              txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS tableinfo(table_id INTEGER PRIMARY KEY AUTOINCREMENT, table_name TEXT NOT NULL, created_at TEXT NULL)',
+                []
+              );
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS typeinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, column_name TEXT NULL, column_type TEXT NULL)',
+                []
+              );
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS valueinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, record_date TEXT NULL, column_name TEXT NULL, column_value TEXT NULL)',
+                []
+              );
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS selectinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, column_name TEXT NULL, select_value TEXT NULL)',
+                []
+              );
+            }
+          }
+        );
+      });
+
+        db.transaction(tx => {
+          tx.executeSql(
+          'SELECT * FROM tableinfo',
+          [],
+          (tx, results) => {
+            var len = results.rows.length;
+          //  값이 있는 경우에 
+            if (len > 0) {       
+              console.log("tables exist")
+              for(var i=0; i<results.rows.length; i++){
+              const table_name = results.rows.item(i).table_name   
+              if(tableArray.indexOf(table_name) < 0 ){
+                console.log(table_name)
+                tableArray.push({
+                  label: table_name,
+                  value: table_name,
+                });
+                console.log(tableArray)
+              //  this.setState({reload: !this.state.reload})
+                } 
+                if(i == results.rows.length-1){
+                  try {
+                    AsyncStorage.setItem('gettables', 'true');
+                  } catch (error) {
+                    console.error('AsyncStorage error: ' + error.message);
+                  }
+                  this.setState({result:"dd"})
+                }
+              }
+            }else{
+              console.log("no table")
+            }
+          });
+        });
+  
+    
     this.state = {
       table: undefined,
       reload: true
     }
+
   }
 
-  setChange(){    
-    //  alert("Main1 setChange()")
-      AsyncStorage.getItem('table', (err, result) => {
-        this.setState({table:result})        
-      })
-    }
-
-
+ 
   Go(value){    
     this.setState({
       table: value,
@@ -137,6 +202,9 @@ export default class App extends React.Component {
    // alert(this.state.table)
     if(this.state.table == "add table"){      
       this.props.navigation.navigate("AddtableScreen")
+      AsyncStorage.getItem('table', (err, result) => {
+        this.setState({table:result})        
+      })
       }else{
         try {
           AsyncStorage.setItem('table', this.state.table);
@@ -150,23 +218,22 @@ export default class App extends React.Component {
 
 
   componentWillMount(){
+    
     AsyncStorage.getItem('table', (err, result) => {
         this.setState({table:result})        
-      })
+      })    
   }
+
+  
 
   render() {	
     return this.state.reload ?       
     <View style={{flex:1, backgroundColor: 'white'}}>
-       <NavigationEvents
-      onWillFocus={payload => {console.log(payload),
-        this.setChange();
-      }} />  
       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
         <RNPickerSelect
             placeholder={placeholder}
-            items={tables}
+            items={tableArray}
             onValueChange={(value) => {
                this.Go(value)
             }}/*
@@ -198,15 +265,11 @@ export default class App extends React.Component {
     : 
     
     <View style={{flex:1, backgroundColor: 'white'}}>
-       <NavigationEvents
-      onWillFocus={payload => {console.log(payload),
-        this.setChange();
-      }} />  
       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
         <RNPickerSelect
             placeholder={placeholder}
-            items={tables}
+            items={tableArray}
             onValueChange={(value) => {
                this.Go(value)
             }}/*
