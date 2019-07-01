@@ -126,6 +126,10 @@ export default class App extends React.Component {
           "SELECT name FROM sqlite_master WHERE type='table' AND name='tableinfo'",
           [],
           function(tx, res) {
+           // txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
+           // txn.executeSql('DROP TABLE IF EXISTS typeinfo', []);
+           // txn.executeSql('DROP TABLE IF EXISTS selectinfo', []);
+
             if (res.rows.length == 0) {
               
               console.log('no data', res.rows.length);
@@ -150,47 +154,12 @@ export default class App extends React.Component {
           }
         );
       });
-
-        db.transaction(tx => {
-          tx.executeSql(
-          'SELECT * FROM tableinfo',
-          [],
-          (tx, results) => {
-            var len = results.rows.length;
-          //  값이 있는 경우에 
-            if (len > 0) {       
-              console.log("tables exist")
-              for(var i=0; i<results.rows.length; i++){
-              const table_name = results.rows.item(i).table_name   
-              if(tableArray.indexOf(table_name) < 0 ){
-                console.log(table_name)
-                tableArray.push({
-                  label: table_name,
-                  value: table_name,
-                });
-                console.log(tableArray)
-              //  this.setState({reload: !this.state.reload})
-                } 
-                if(i == results.rows.length-1){
-                  try {
-                    AsyncStorage.setItem('gettables', 'true');
-                  } catch (error) {
-                    console.error('AsyncStorage error: ' + error.message);
-                  }
-                  this.setState({result:"dd"})
-                }
-              }
-            }else{
-              console.log("no table")
-            }
-          });
-        });
-  
-    
+   
     this.state = {
       table: undefined,
       reload: true
     }
+    this.Go = this.Go.bind(this)
 
   }
 
@@ -216,18 +185,48 @@ export default class App extends React.Component {
     })
   }
 
+  componentWillMount(){   
+    db.transaction(tx => {
+      tx.executeSql(
+      'SELECT * FROM tableinfo',
+      [],
+      (tx, results) => {
+        var len = results.rows.length;
+      //  값이 있는 경우에 
+        if (len > 0) {
+          tableArray.length = 0       
+          console.log("tables exist")
+          for(var i=0; i<results.rows.length; i++){
+          const table_name = results.rows.item(i).table_name   
+          if(tableArray.indexOf(table_name) < 0 ){
+            console.log(table_name)
+            tableArray.push({
+              label: table_name,
+              value: table_name,
+            });
+            console.log(tableArray)
+          //  this.setState({reload: !this.state.reload})
+            } 
+            if(i == results.rows.length-1){    
+              tableArray.push({
+                label: "add table",
+                value: "add table"
+              });  
+              AsyncStorage.getItem('table', (err, result) => {
+                this.setState({table:result})        
+              })    
+            }
+          }
+        }else{
+          console.log("no table")
+        }
+      });
+    });
 
-  componentWillMount(){
-    
-    AsyncStorage.getItem('table', (err, result) => {
-        this.setState({table:result})        
-      })    
   }
 
-  
-
   render() {	
-    return this.state.reload ?       
+    return this.state.reload ?   
     <View style={{flex:1, backgroundColor: 'white'}}>
       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
@@ -261,43 +260,44 @@ export default class App extends React.Component {
      </View>
      <Container />
     </View>
+
+     
+: 
     
-    : 
-    
-    <View style={{flex:1, backgroundColor: 'white'}}>
-      <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
-       <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
-        <RNPickerSelect
-            placeholder={placeholder}
-            items={tableArray}
-            onValueChange={(value) => {
-               this.Go(value)
-            }}/*
-            onUpArrow={() => {
-                this.inputRefs.firstTextInput.focus();
-            }}
-            onDownArrow={() => {
-                this.inputRefs.favSport1.togglePicker();
-            }} */
-            style={pickerSelectStyles}
-            value={this.state.table}
-          //  ref={(el) => {
-            //   this.inputRefs.favSport0 = el;
-          // }}
-        />    
-      </View>
-      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '20%', float:'right'}}>
-      <TouchableOpacity 
-        activeOpacity = {0.9}
-        onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
-        >      
-        <Icon name={'question'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
-        </TouchableOpacity>
-      </View>
-     </View>
-     <Container2 />
-    </View>
-    
+<View style={{flex:1, backgroundColor: 'white'}}>
+  <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
+   <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
+    <RNPickerSelect
+        placeholder={placeholder}
+        items={tableArray}
+        onValueChange={(value) => {
+           this.Go(value)
+        }}/*
+        onUpArrow={() => {
+            this.inputRefs.firstTextInput.focus();
+        }}
+        onDownArrow={() => {
+            this.inputRefs.favSport1.togglePicker();
+        }} */
+        style={pickerSelectStyles}
+        value={this.state.table}
+      //  ref={(el) => {
+        //   this.inputRefs.favSport0 = el;
+      // }}
+    />    
+  </View>
+  <View style={{flexDirection: "column", flexWrap: 'wrap', width: '20%', float:'right'}}>
+  <TouchableOpacity 
+    activeOpacity = {0.9}
+    onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
+    >      
+    <Icon name={'question'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+    </TouchableOpacity>
+  </View>
+ </View>
+ <Container2 />
+</View>
+
 	}
 }
 

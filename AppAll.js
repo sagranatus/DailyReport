@@ -2,18 +2,21 @@ import React, {Component} from 'react';
 import {Platform, StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/EvilIcons';
 import {
+  HeaderBackButton,
   createStackNavigator,
   createMaterialTopTabNavigator,
   createAppContainer,
+  createSwitchNavigator
 } from 'react-navigation';
 import App from './App';
 import AddtablePage from './page/AddtablePage';
+import FirstPage from './page/FirstPage';
 import RNPickerSelect from 'react-native-picker-select';
 
 
 //making a StackNavigator to export as default
 const Container = createAppContainer(
-  createStackNavigator({
+  createSwitchNavigator({   
     TabScreen: {
       screen: App,
       navigationOptions: {
@@ -21,9 +24,9 @@ const Container = createAppContainer(
       }  
     },
     AddtableScreen: {
-      screen: AddtablePage
-    },
-    
+      screen: AddtablePage,
+  
+    }    
     
   })
 );
