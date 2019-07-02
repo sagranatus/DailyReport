@@ -8,12 +8,13 @@ import {
   createAppContainer,
   createSwitchNavigator
 } from 'react-navigation';
+import { YellowBox } from 'react-native';
 import App from './App';
 import AddtablePage from './page/AddtablePage';
 import FirstPage from './page/FirstPage';
 import RNPickerSelect from 'react-native-picker-select';
 
-
+YellowBox.ignoreWarnings(['ViewPagerAndroid']);
 //making a StackNavigator to export as default
 const Container = createAppContainer(
   createSwitchNavigator({   

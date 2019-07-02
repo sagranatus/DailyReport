@@ -218,7 +218,12 @@ export default class App extends React.Component {
             }
           }
         }else{
-          console.log("no table")
+          console.log("no table _ app.js")
+          tableArray.push({
+            label: "add table",
+            value: "add table"
+          });  
+          this.setState({reload:true})
         }
       });
     });
@@ -226,7 +231,7 @@ export default class App extends React.Component {
   }
 
   render() {	
-    return this.state.reload ?   
+    return (
     <View style={{flex:1, backgroundColor: 'white'}}>
       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
@@ -261,43 +266,7 @@ export default class App extends React.Component {
      <Container />
     </View>
 
-     
-: 
-    
-<View style={{flex:1, backgroundColor: 'white'}}>
-  <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
-   <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
-    <RNPickerSelect
-        placeholder={placeholder}
-        items={tableArray}
-        onValueChange={(value) => {
-           this.Go(value)
-        }}/*
-        onUpArrow={() => {
-            this.inputRefs.firstTextInput.focus();
-        }}
-        onDownArrow={() => {
-            this.inputRefs.favSport1.togglePicker();
-        }} */
-        style={pickerSelectStyles}
-        value={this.state.table}
-      //  ref={(el) => {
-        //   this.inputRefs.favSport0 = el;
-      // }}
-    />    
-  </View>
-  <View style={{flexDirection: "column", flexWrap: 'wrap', width: '20%', float:'right'}}>
-  <TouchableOpacity 
-    activeOpacity = {0.9}
-    onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
-    >      
-    <Icon name={'question'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
-    </TouchableOpacity>
-  </View>
- </View>
- <Container2 />
-</View>
-
+  )
 	}
 }
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text, VirtualizedList, TouchableOpacity  } from 'react-native';
 import CustomRow from './CustomRow';
-
+import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -9,18 +9,24 @@ const styles = StyleSheet.create({
 });
 
 
-const CustomListview = ({ itemList }) => (
+const CustomListview = ({ itemList, tableName, onChange }) => (
     <View style={styles.container}>
-        <FlatList
+        <VirtualizedList
+         getItem={(data, index) => data[index]}
+         getItemCount={data => data.length}
                 data={itemList}
-                renderItem={({ item }) => <CustomRow
-                    title={item.title}
-                    description={item.description}
-                    image_url={item.image_url}
+                renderItem={({ item }) => <CustomRow                
+                onChange={(title, value) => onChange(title, value)}
+                title={item.title}
+                type={item.type}
+                val={item.value}
+                select={item.select}
+                tableName={tableName}
+                image_url={item.image_url}
                 />}
-            />
-
+            />      
     </View>
 );
 
 export default CustomListview;
+

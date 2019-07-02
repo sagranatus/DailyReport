@@ -5,11 +5,8 @@ import { AsyncStorage, Text, View, FlatList } from 'react-native';
 //import all the components we are going to use.
 import {NavigationEvents} from 'react-navigation'
 import { openDatabase } from 'react-native-sqlite-storage'
-import CustomListview from '../etc/CustomListview'
 var db = openDatabase({ name: 'TableDatabase.db' })
 
-
-var arrays = new Array()
 export default class CalendarPage extends React.Component {
   constructor(props) {
     super(props);
@@ -57,7 +54,7 @@ export default class CalendarPage extends React.Component {
                       column = results.rows.item(i).column_name
                       type = results.rows.item(i).column_type
                       console.log(column+type)
-                      arrays.push({key: i+1, title:column, description: type})
+                      arrays.push({key: (i+1).toString(), title:column, description: type})
 
                     } 
                     this.setState({reload:true})
@@ -65,7 +62,7 @@ export default class CalendarPage extends React.Component {
                 }
               );  
             }else{               
-              alert('table is not exists!!')   
+           //   alert('table is not exists!!')   
             }
           }
         );      
@@ -93,9 +90,6 @@ export default class CalendarPage extends React.Component {
       }} />  
        
         <Text>{this.state.table}</Text>
-        <CustomListview
-          itemList={arrays}
-        />
       </View>
     );
   }
