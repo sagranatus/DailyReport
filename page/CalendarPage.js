@@ -53,7 +53,7 @@ export default class CalendarPage extends React.Component {
                     for(var i=0; i<results.rows.length; i++){
                       column = results.rows.item(i).column_name
                       type = results.rows.item(i).column_type
-                      console.log(column+type)
+                    //  console.log(column+type)
                       arrays.push({key: (i+1).toString(), title:column, description: type})
 
                     } 

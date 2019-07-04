@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         flexDirection: 'row',
-        padding: 10,
+        padding: 5,
         marginLeft:16,
         marginRight:16,
         marginTop: 8,
@@ -27,12 +27,17 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         color: '#000',
+        marginTop:8
     },
     container_text: {
-        flex: 1,
         flexDirection: 'column',
-        marginLeft: 12,
-        justifyContent: 'center',
+        width:'20%',
+        paddingLeft: 12
+    },
+    container_val: {
+        flexDirection: 'column',
+        width:'80%',
+        height:40
     },
     type: {
         fontSize: 11,
@@ -58,60 +63,63 @@ const styles = StyleSheet.create({
   };
 
   var radio_props = [
-    {label: 'Good', value: 'good' },
-    {label: 'Bad', value: 'bad' }
+    {label: 'Good', value: 0 },
+    {label: 'Bad', value: 1 }
   ];
 export default class CustomRow extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            saea: "ddd",
         };
       }
     
-    componentWillMount(){  
+    componentWillMount(){         
+        
     }
 
     render() {
         const type = this.props.type
         const title = this.props.title
         const val = this.props.val
+        const date = this.props.date
         const select = this.props.select
       switch (this.props.type) {
         case 'select':
-        console.log(title, this.state[title])
+        console.log("select",this.state[title])
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
                 <Text style={styles.title}>
                     {title}
                 </Text>
+            </View>
+            <View style={styles.container_val}>
                 <RNPickerSelect
                     placeholder={placeholder}
                     items={select}
-                    onValueChange={(value) => {
-                        this.props.onChange(title, value)
-                    }}
+                    onValueChange={(value) => {val !== "" ? {} :  [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                    }}  
                     style={pickerSelectStyles}
-                    value={val==undefined ? this.state[title] : val}
+                    value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 />   
               </View>            
             </View>
             );
         case 'text':      
-        console.log(this.state[title])   
+        console.log(this.state[title])  
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
-                <Text style={styles.title}>
+               <Text style={styles.title}>
                     {title} 
                 </Text>
-                <TextInput  
-                ref="firstInput"              
+                </View>
+                <View style={styles.container_val}>
+                <TextInput              
                 placeholder={'add text'}       
-                value={val==undefined ? this.state[title] : val}
+                value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
-                    this.props.onChange(title, value)
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
                 }}  
                 underlineColorAndroid='transparent' 
                 style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
@@ -127,11 +135,13 @@ export default class CustomRow extends React.Component {
                 <Text style={styles.title}>
                     {title} 
                 </Text>
+                </View>
+                <View style={[styles.container_val, {height:70}]}>
                 <TextInput                
                 placeholder={'add description'}       
-                value={val==undefined ? this.state[title] : val}
+                value={this.state[title+date] == "" ? val : this.state[title+date]}
                 onChangeText={(value) => {
-                    this.props.onChange(title, value)
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
                 }}  
                 underlineColorAndroid='transparent' 
                 style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
@@ -147,12 +157,14 @@ export default class CustomRow extends React.Component {
                 <Text style={styles.title}>
                     {title}
                 </Text>
+                </View>
+                <View style={styles.container_val}>
                 <TextInput                
                 placeholder={'add number'}       
-                value={val==undefined ? this.state[title] : val}
+                value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
-                    this.props.onChange(title, value)
-                }} 
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                }}  
                 underlineColorAndroid='transparent' 
                 keyboardType={'numeric'}
                 style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
@@ -167,21 +179,75 @@ export default class CustomRow extends React.Component {
                     <Text style={styles.title}>
                         {title}
                     </Text>
+                </View>
+                <View style={styles.container_val}>
+                  
                     <RadioForm
-                    radio_props={radio_props} 
-                    formHorizontal={true}
-                    labelHorizontal={true}
-                    buttonColor={'#50C900'}
-                  //  labelColor={'#50C900'}
-                    selectedButtonColor={'#50C900'}
+                    style={{marginTop:8}}
+                    buttonColor={'#01579b'}
+                    //  labelColor={'#50C900'}
+                    selectedButtonColor={'#01579b'}
                     buttonSize={10}
                     buttonOuterSize={20}
+                    formHorizontal={true}
                     animation={true}
-                    initial={0}
-                    onPress={(value) => {
-                        this.props.onChange(title, value)
-                    }}
-                    />
+                    >
+                     <RadioButton labelHorizontal={true} key={0} >
+                        <RadioButtonInput
+                            index={0}
+                            obj = {{label: 'Good', value: 'good' }}
+                            isSelected={this.state[title+date] == undefined ? val === 'good' : this.state[title+date] === 'good'}
+                            onPress={() => {
+                                [this.props.onChange(title, 'good'), this.setState({[title+date] : 'good'})]
+                            }}  
+                            borderWidth={3}
+                            buttonInnerColor={'#01579b'}
+                            buttonOuterColor={'#01579b'}
+                            buttonSize={10}
+                            buttonOuterSize={20}
+                            buttonStyle={{}}
+                            buttonWrapStyle={{marginLeft: 10}}
+                        />
+                        <RadioButtonLabel
+                            index={0}
+                            obj = {{label: 'Good', value: 'good' }}
+                            labelHorizontal={true}
+                            onPress={() => {
+                            [this.props.onChange(title, 'good'), this.setState({[title] : 'good'})]
+                          }}  
+                            labelStyle={{color: '#01579b'}}
+                            labelWrapStyle={{}}
+                        />
+                        </RadioButton>
+                        <RadioButton labelHorizontal={true} key={1} >
+                        <RadioButtonInput
+                            index={1}
+                            obj = {{label: 'Bad', value: 'bad' }}
+                            isSelected={this.state[title+date] == undefined ? val === 'bad' : this.state[title+date] === 'bad'}
+                            onPress={() => {
+                                [this.props.onChange(title, 'bad'), this.setState({[title+date] : 'bad'})]
+                            }}  
+                            borderWidth={3}
+                            buttonInnerColor={'#01579b'}
+                            buttonOuterColor={'#01579b'}
+                            buttonSize={10}
+                            buttonOuterSize={20}
+                            buttonStyle={{}}
+                            buttonWrapStyle={{marginLeft: 10}}
+                        />
+                        <RadioButtonLabel
+                            index={1}
+                            obj = {{label: 'Bad', value: 'bad' }}
+                            labelHorizontal={true}
+                            onPress={() => {
+                            [this.props.onChange(title, 'bad'), this.setState({[title+date] : 'bad'})]
+                          }}                            
+                            labelStyle={{color: '#01579b'}}
+                           // labelStyle={{fontSize: 20, color: '#2ecc71'}}
+                            labelWrapStyle={{}}
+                        />
+                        </RadioButton>
+                    </RadioForm>
                 </View>
                 </View>
                 );
@@ -192,12 +258,17 @@ export default class CustomRow extends React.Component {
                     <Text style={styles.title}>
                         {title}
                     </Text>
+                </View>
+                <View style={styles.container_val}>
                     <CheckBox
-                     title='Click Here'
-                     checked={val==undefined ? this.state[title] : val}
+                    // title='Click Here'
+                     checked={this.state[title+date] == undefined ? (val == "1" ? true : false ) : this.state[title+date]}
+                     checkedColor={'#01579b'}
+                     uncheckedColor={'#01579b'}
+                     containerStyle={{padding:3, color:'#01579b'}}
                      onPress={(value) => {
-                        [this.props.onChange(title, !this.state[title]), this.setState({[title]:!this.state[title]})]
-                    }}
+                        [this.props.onChange(title, this.state[title+date] == undefined ? (val == "1" ? false : true ) : !this.state[title+date]), this.state[title+date] == undefined ? this.setState({[title+date]: (val == "1" ? false : true )}) : this.setState({[title+date]:!this.state[title+date]})]
+                    }}  
                     />
                 </View>
                 </View>

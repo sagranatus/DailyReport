@@ -49,15 +49,6 @@ const placeholder = {
 };
 const TabScreen = createMaterialTopTabNavigator(
   {
-    Calendar: { 
-      screen: CalendarPage,
-      navigationOptions: {
-      //  tabBarLabel:"Home",
-        tabBarIcon: ({ tintColor }) => (
-          <Icon name="calendar" size={30} color={tintColor} />
-        )
-      }
-     },
     Today: { 
       screen: TodayPage,
       navigationOptions: {
@@ -67,6 +58,16 @@ const TabScreen = createMaterialTopTabNavigator(
         )
       }// plus-circle-outline  table-plus 
      },
+
+    Calendar: { 
+      screen: CalendarPage,
+      navigationOptions: {
+      //  tabBarLabel:"Home",
+        tabBarIcon: ({ tintColor }) => (
+          <Icon name="calendar" size={30} color={tintColor} />
+        )
+      }
+     },   
     Analysis: { 
       screen: AnalysisPage,
       navigationOptions: {
