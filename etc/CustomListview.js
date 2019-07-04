@@ -27,6 +27,8 @@ export default class CustomListView extends React.Component {
     const tableName =  this.props.tableName
     const onChange = this.props.onChange 
     const date = this.props.date
+    const readonly = this.props.readonly
+    console.log("readonly", readonly)
     console.log("itemList", itemList)
     return(
     <View style={styles.container}>
@@ -42,7 +44,8 @@ export default class CustomListView extends React.Component {
                 title={item.title}
                 type={item.type}
                 val={item.value}
-                date={date}
+                date={date}                
+                readonly={readonly}
                 select={item.select}
                 tableName={tableName}
                 image_url={item.image_url}

@@ -1,7 +1,7 @@
 // Home screen
 import React, { Component } from 'react';
 //import react in our code.
-import { AsyncStorage, Text, View, FlatList,TouchableOpacity, StyleSheet  } from 'react-native';
+import { AsyncStorage, Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
 //import all the components we are going to use.
 import {NavigationEvents} from 'react-navigation'
 import { openDatabase } from 'react-native-sqlite-storage'
@@ -9,6 +9,7 @@ import CustomListview from '../etc/CustomListview'
 var db = openDatabase({ name: 'TableDatabase.db' })
 import RNPickerSelect from 'react-native-picker-select';
 import CalendarStrip from 'react-native-calendar-strip';
+import Icon from 'react-native-vector-icons/EvilIcons';
 const tableArray = new Array()
 var arrays = new Array()
 var columns = new Array()
@@ -23,9 +24,47 @@ export default class TodayPage extends React.Component {
   constructor(props) {
     super(props);
 
+    // table 생성
+      // DB 테이블 생성
+      db.transaction(function(txn) {
+        txn.executeSql(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='tableinfo'",
+          [],
+          function(tx, res) {
+           // txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
+           // txn.executeSql('DROP TABLE IF EXISTS typeinfo', []);
+           // txn.executeSql('DROP TABLE IF EXISTS selectinfo', []);
+
+            if (res.rows.length == 0) {
+              
+              console.log('no data', res.rows.length);
+              txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS tableinfo(table_id INTEGER PRIMARY KEY AUTOINCREMENT, table_name TEXT NOT NULL, created_at TEXT NULL)',
+                []
+              );
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS typeinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, column_name TEXT NULL, column_type TEXT NULL)',
+                []
+              );
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS valueinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, record_date TEXT NULL, column_name TEXT NULL, column_value TEXT NULL)',
+                []
+              );
+              txn.executeSql(
+                'CREATE TABLE IF NOT EXISTS selectinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, column_name TEXT NULL, select_value TEXT NULL)',
+                []
+              );
+            }
+          }
+        );
+      });
+
     this.state = {
       table: undefined,
-      dataExist : false
+      dataExist : false,
+      readonly: false,
+      showUpdate:false
     };
     AsyncStorage.getItem('table', (err, result) => {
       this.setState({table:result})         
@@ -61,7 +100,7 @@ export default class TodayPage extends React.Component {
 
   getTableDB(table_name){
     const setColumn = (column) => this.setState({column: column})
-    const getValue = (table_id) => this.getValues(table_id, this.state.today);
+    const getValue = (table_id) => this.getValues(table_id, this.state.selectedDate);
     db.transaction(tx => {
       db.transaction(function(tx) {
         tx.executeSql(
@@ -136,6 +175,7 @@ export default class TodayPage extends React.Component {
   }
 
   InsertValue(date){
+    Keyboard.dismiss()
   //  columns = this.state.column
     console.log("columns",this.state.column)
     if(this.state.column !== undefined){    
@@ -170,6 +210,7 @@ export default class TodayPage extends React.Component {
   }
 
   UpdateValue(date){
+    Keyboard.dismiss()
     //  columns = this.state.column
       console.log("columns",this.state.column)
       if(this.state.column !== undefined){    
@@ -197,6 +238,8 @@ export default class TodayPage extends React.Component {
 
     UpdateValueToTable(table_id,date,array_column){
     console.log("here", table_id + date)
+    const setReadOnly = (_var) => this.setState({readonly: _var})
+    const setUpdate = (_var) => this.setState({showUpdate: _var})
     const setState = (_var) => this.setState({reload:_var})
     var arrays = new Array()
     var add = ''
@@ -218,6 +261,8 @@ export default class TodayPage extends React.Component {
           if (results.rowsAffected > 0) {
             console.log('value update : ', "success") 
             alert("data updated")
+            setUpdate(false)
+            setReadOnly(true)
           } else {
             console.log('value update : ', "failed")
           }
@@ -234,6 +279,7 @@ export default class TodayPage extends React.Component {
   const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
   const setState = (_var) => this.setState({table_id: _var})
   const Exist = (_var) =>  this.setState({dataExist : _var})  
+  const showUpdate = this.state.showUpdate
   var column_origin = this.state.column;
   db.transaction(tx => {
       db.transaction(function(tx) {
@@ -245,6 +291,11 @@ export default class TodayPage extends React.Component {
         //  값이 있는 경우에 
         var column, value
           if (len > 0) { 
+            if(showUpdate){
+              setValue('readonly', false)
+            }else{
+            setValue('readonly', true)
+            }
             values.length = 0
            // alert("there is!")
             for(var i=0; i<results.rows.length; i++){
@@ -259,7 +310,9 @@ export default class TodayPage extends React.Component {
             } 
             setState(table_id)
             Exist(true)
-          }else{
+          }else{          
+              setValue('readonly', false)            
+            
             console.log("column!",column_origin)
             column_origin.map(( item_, key ) =>
             {
@@ -279,7 +332,8 @@ export default class TodayPage extends React.Component {
 
   
   InsertValueToTable(table_id, date, array_column){
-    const setState = (_var) => this.setState({reload:_var})
+    const setReadOnly = (_var) => this.setState({readonly: _var})
+    const setExist = (_var) => this.setState({dataExist: _var})
     console.log(table_id + date + arrays);
     console.log("here", array_column)
     var arrays = new Array()
@@ -302,7 +356,8 @@ export default class TodayPage extends React.Component {
           if (results.rowsAffected > 0) {
             console.log('value insert : ', "success") 
             alert("data inserted")
-            setState(true)
+            setReadOnly(true)
+            setExist(true)
           } else {
             console.log('value insert : ', "failed")
           }
@@ -369,11 +424,14 @@ export default class TodayPage extends React.Component {
           }
         }else{
           console.log("no table _ app.js")
-          tableArray.push({
-            label: "add table",
-            value: "add table"
-          });  
-          this.setState({reload:true})
+          if(tableArray.length == 0){
+            tableArray.push({
+              label: "add table",
+              value: "add table"
+            });  
+            this.setState({reload:true})
+          }
+          
         }
       });
     });
@@ -395,6 +453,7 @@ export default class TodayPage extends React.Component {
   }
 
   onDateSelect(date){
+    Keyboard.dismiss()
     var year = date.getFullYear();
     var month = date.getMonth()+1
     var day = date.getDate();
@@ -416,24 +475,44 @@ export default class TodayPage extends React.Component {
       onWillFocus={payload => {console.log(payload),
         this.setChange();
       }} />  
-         <RNPickerSelect
-            placeholder={placeholder}
-            items={tableArray}
-            onValueChange={(value) => {
-               this.Go(value)
-            }}/*
-            onUpArrow={() => {
-                this.inputRefs.firstTextInput.focus();
-            }}
-            onDownArrow={() => {
-                this.inputRefs.favSport1.togglePicker();
-            }} */
-            style={pickerSelectStyles}
-            value={this.state.table}
-          //  ref={(el) => {
-            //   this.inputRefs.favSport0 = el;
-          // }}
-        />    
+        <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
+         <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
+           <RNPickerSelect
+              placeholder={placeholder}
+              items={tableArray}
+              onValueChange={(value) => {
+                this.Go(value)
+              }}/*
+              onUpArrow={() => {
+                  this.inputRefs.firstTextInput.focus();
+              }}
+              onDownArrow={() => {
+                  this.inputRefs.favSport1.togglePicker();
+              }} */
+              style={pickerSelectStyles}
+              value={this.state.table}
+            //  ref={(el) => {
+              //   this.inputRefs.favSport0 = el;
+            // }}
+          />    
+          </View>
+          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
+          <TouchableOpacity 
+            activeOpacity = {0.9}
+            onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
+            >      
+            <Icon name={'pencil'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+            </TouchableOpacity>
+          </View>
+          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
+          <TouchableOpacity 
+            activeOpacity = {0.9}
+            onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
+            >      
+            <Icon name={'chart'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+            </TouchableOpacity>
+          </View>
+        </View>
         <CalendarStrip
        // calendarAnimation={{type: 'sequence', duration:5}}
         daySelectionAnimation={{type: 'background', duration: 300, highlightColor: '#9265DC'}}
@@ -446,11 +525,12 @@ export default class TodayPage extends React.Component {
           tableName={this.state.table}
           itemList={arrays}
           date={this.state.selectedDate}
+          readonly={this.state.readonly}
           onChange = {(title, value) => this.setState({[title]:value}) }         
         />
          <TouchableOpacity 
         activeOpacity = {0.9}
-        style={!this.state.dataExist ? styles.Button : {display:'none'}}
+        style={!this.state.dataExist ? [styles.Button, {backgroundColor: '#298A08'}] : {display:'none'}}
         onPress={()=> this.InsertValue(this.state.selectedDate)} 
         >
           <Text style={{color:"#fff", textAlign:'center'}}>
@@ -461,6 +541,20 @@ export default class TodayPage extends React.Component {
         <TouchableOpacity 
         activeOpacity = {0.9}        
         style={this.state.dataExist ? styles.Button : {display:'none'}}
+        onPress={()=> this.setState({readonly: false, showUpdate: true})} 
+        >
+          <Text style={!this.state.showUpdate ? {color:"#fff", textAlign:'center'} : {display:'none'}}>
+          edit values
+          </Text>
+          <Text style={this.state.showUpdate ? {color:"#fff", textAlign:'center'} : {display:'none'}}>
+          editing...
+          </Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity 
+        activeOpacity = {0.9}        
+        style={this.state.dataExist && this.state.showUpdate ? styles.Button : {display:'none'}}
         onPress={()=> this.UpdateValue(this.state.selectedDate)} 
         >
           <Text style={{color:"#fff", textAlign:'center'}}>
@@ -520,7 +614,7 @@ const pickerSelectStyles = StyleSheet.create({
   },
   inputAndroid: {
       fontSize: 15,
-      width:'100%',
+      width:170,
       height:40,
       paddingHorizontal: 10,
       paddingVertical: 1,

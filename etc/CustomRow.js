@@ -83,6 +83,8 @@ export default class CustomRow extends React.Component {
         const val = this.props.val
         const date = this.props.date
         const select = this.props.select
+        const readonly = this.props.readonly
+        console.log("readonly1", readonly)
       switch (this.props.type) {
         case 'select':
         console.log("select",this.state[title])
@@ -93,8 +95,9 @@ export default class CustomRow extends React.Component {
                     {title}
                 </Text>
             </View>
-            <View style={styles.container_val}>
+            <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
                 <RNPickerSelect
+                   // disabled={readonly ? true : false}
                     placeholder={placeholder}
                     items={select}
                     onValueChange={(value) => {val !== "" ? {} :  [this.props.onChange(title, value), this.setState({[title+date] : value})]
@@ -114,9 +117,9 @@ export default class CustomRow extends React.Component {
                     {title} 
                 </Text>
                 </View>
-                <View style={styles.container_val}>
+                <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
                 <TextInput              
-                placeholder={'add text'}       
+                placeholder={'add text'} 
                 value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
                     [this.props.onChange(title, value), this.setState({[title+date] : value})]
@@ -136,10 +139,10 @@ export default class CustomRow extends React.Component {
                     {title} 
                 </Text>
                 </View>
-                <View style={[styles.container_val, {height:70}]}>
+                <View style={[styles.container_val, {height:70}]} pointerEvents={readonly ? 'none' : null}>
                 <TextInput                
                 placeholder={'add description'}       
-                value={this.state[title+date] == "" ? val : this.state[title+date]}
+                value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
                     [this.props.onChange(title, value), this.setState({[title+date] : value})]
                 }}  
@@ -158,7 +161,7 @@ export default class CustomRow extends React.Component {
                     {title}
                 </Text>
                 </View>
-                <View style={styles.container_val}>
+                <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
                 <TextInput                
                 placeholder={'add number'}       
                 value={this.state[title+date] == undefined ? val : this.state[title+date]}
@@ -180,13 +183,13 @@ export default class CustomRow extends React.Component {
                         {title}
                     </Text>
                 </View>
-                <View style={styles.container_val}>
+                <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
                   
                     <RadioForm
                     style={{marginTop:8}}
-                    buttonColor={'#01579b'}
+                    buttonColor={readonly ? '#01579b' : '#298A08'}
                     //  labelColor={'#50C900'}
-                    selectedButtonColor={'#01579b'}
+                    selectedButtonColor={readonly ? '#01579b' : '#298A08'}
                     buttonSize={10}
                     buttonOuterSize={20}
                     formHorizontal={true}
@@ -201,8 +204,8 @@ export default class CustomRow extends React.Component {
                                 [this.props.onChange(title, 'good'), this.setState({[title+date] : 'good'})]
                             }}  
                             borderWidth={3}
-                            buttonInnerColor={'#01579b'}
-                            buttonOuterColor={'#01579b'}
+                            buttonInnerColor={readonly ? '#01579b' : '#298A08'}
+                            buttonOuterColor={readonly ? '#01579b' : '#298A08'}
                             buttonSize={10}
                             buttonOuterSize={20}
                             buttonStyle={{}}
@@ -215,7 +218,7 @@ export default class CustomRow extends React.Component {
                             onPress={() => {
                             [this.props.onChange(title, 'good'), this.setState({[title] : 'good'})]
                           }}  
-                            labelStyle={{color: '#01579b'}}
+                            labelStyle={{color: readonly ? '#01579b' : '#298A08'}}
                             labelWrapStyle={{}}
                         />
                         </RadioButton>
@@ -228,8 +231,8 @@ export default class CustomRow extends React.Component {
                                 [this.props.onChange(title, 'bad'), this.setState({[title+date] : 'bad'})]
                             }}  
                             borderWidth={3}
-                            buttonInnerColor={'#01579b'}
-                            buttonOuterColor={'#01579b'}
+                            buttonInnerColor={readonly ? '#01579b' : '#298A08'}
+                            buttonOuterColor={readonly ? '#01579b' : '#298A08'}
                             buttonSize={10}
                             buttonOuterSize={20}
                             buttonStyle={{}}
@@ -242,7 +245,7 @@ export default class CustomRow extends React.Component {
                             onPress={() => {
                             [this.props.onChange(title, 'bad'), this.setState({[title+date] : 'bad'})]
                           }}                            
-                            labelStyle={{color: '#01579b'}}
+                            labelStyle={{color: readonly ? '#01579b' : '#298A08'}}
                            // labelStyle={{fontSize: 20, color: '#2ecc71'}}
                             labelWrapStyle={{}}
                         />
@@ -259,13 +262,14 @@ export default class CustomRow extends React.Component {
                         {title}
                     </Text>
                 </View>
-                <View style={styles.container_val}>
+                <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
                     <CheckBox
                     // title='Click Here'
                      checked={this.state[title+date] == undefined ? (val == "1" ? true : false ) : this.state[title+date]}
-                     checkedColor={'#01579b'}
-                     uncheckedColor={'#01579b'}
-                     containerStyle={{padding:3, color:'#01579b'}}
+                     checkedColor={readonly ? '#01579b' : '#298A08'}
+                     uncheckedColor={readonly ? '#01579b' : '#298A08'}
+                     containerStyle={{padding:3}}
+                  //   disabled = {readonly ? true : false}
                      onPress={(value) => {
                         [this.props.onChange(title, this.state[title+date] == undefined ? (val == "1" ? false : true ) : !this.state[title+date]), this.state[title+date] == undefined ? this.setState({[title+date]: (val == "1" ? false : true )}) : this.setState({[title+date]:!this.state[title+date]})]
                     }}  

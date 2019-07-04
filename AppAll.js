@@ -11,21 +11,24 @@ import {
 import { YellowBox } from 'react-native';
 import App from './App';
 import AddtablePage from './page/AddtablePage';
-import FirstPage from './page/FirstPage';
+import TodayPage from './page/TodayPage';
 import RNPickerSelect from 'react-native-picker-select';
 
 YellowBox.ignoreWarnings(['ViewPagerAndroid']);
 //making a StackNavigator to export as default
 const Container = createAppContainer(
-  createSwitchNavigator({   
-    TabScreen: {
-      screen: App,
+  createStackNavigator({   
+    TodayScreen: {
+      screen: TodayPage,
       navigationOptions: {
         header: null
       }  
     },
     AddtableScreen: {
       screen: AddtablePage,
+      navigationOptions: {
+        header: null
+      }  
   
     }    
     

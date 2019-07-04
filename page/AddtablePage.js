@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, Button,KeyboardAvoidingView,Animated, ScrollView  } from 'react-native';
 import { openDatabase } from 'react-native-sqlite-storage'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+import Icon from 'react-native-vector-icons/EvilIcons';
 import RNPickerSelect from 'react-native-picker-select';
 var db = openDatabase({ name: 'TableDatabase.db' })
 
@@ -167,7 +168,7 @@ checkColumn(){
       alert("add column")
     }
     if(idx2 == -1 && idx2 == -1 && idx3 == -1 && this.state.table_name !== undefined && array_column.length !== 0){
-      alert("all")
+      alert("table made successfully")
       this.InsertTable(this.state.table_name, array_column, array_select)
     }
 
@@ -302,67 +303,11 @@ InsertTable(table_name, array_column, array_select){
               const onSelect = (_var) => this.onSelect(_var)
               return(
                   <Animated.View key = { key } style = {[ styles.viewHolder, { opacity: this.animatedValue, transform: [{ translateY: animationValue }] }]}>           
+                     <View key = { key } style = { styles.viewHolder }>                   
                       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
                         <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
                           <TextInput                
-                          placeholder={_name}       
-                          value={this.state[_name]}
-                          onChangeText={_name =>setName(_name)}    
-                          underlineColorAndroid='transparent' 
-                          style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
-                          />
-                        </View>
-                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
-                          <RNPickerSelect
-                              placeholder={placeholder}
-                              items={select}
-                              onValueChange={(value) => {
-                               // this.setState({_type: value})
-                               onSelect(_type,value,item.index)
-                              }}/*
-                              onUpArrow={() => {
-                                  this.inputRefs.firstTextInput.focus();
-                              }}
-                              onDownArrow={() => {
-                                  this.inputRefs.favSport1.togglePicker();
-                              }} */
-                              style={pickerSelectStyles}
-                              value={this.state[_type]}
-                            //  ref={(el) => {
-                              //   this.inputRefs.favSport0 = el;
-                            // }}
-                          />   
-                        </View>
-                        <TextInput                
-                          placeholder={'add items'}       
-                          value={this.state[select_val]}
-                          onChangeText={_value =>setSelect(_value)}    
-                          underlineColorAndroid='transparent' 
-                          style={this.state[index] != undefined && this.state[index] == true ? [styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}] : {display:'none'}}
-                          />
-                      </View>
-                  </Animated.View>
-              );
-          }
-          else
-          {
-              let inx = item.index
-              let index = 'select'+item.index
-              let select_val = 'select'+item.index+'_val'
-              let _name =  'column'+item.index+'_name'
-              let _type = 'column'+item.index+'_type'
-              const setName = (_var) => this.setState({[_name]:_var})
-              const setType= (_var) => this.setState({[_type]:_var})
-              const setSelect= (_var) => this.setState({[select_val]:_var})
-              const onSelect = (_var) => this.onSelect(_var)
-              const Reload = (_var) => this.setState({reload:_var})
-              const RemoveColumn = (_var) => this.RemoveColumn(_var)
-              return(
-                  <View key = { key } style = { styles.viewHolder }>                   
-                      <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
-                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
-                          <TextInput                
-                          placeholder={_name}      
+                          placeholder={"column name"}      
                           value={this.state[_name]}
                           onChangeText={_name => setName(_name)}    
                           underlineColorAndroid='transparent' 
@@ -392,12 +337,76 @@ InsertTable(table_name, array_column, array_select){
                         <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
                         <TouchableOpacity 
                           activeOpacity = {0.9}
-                          style={styles.Button}
                           onPress={()=> RemoveColumn(item.index)} 
                           >
-                            <Text style={{color:"#fff", textAlign:'center'}}>
-                            X
-                            </Text>
+                           <Icon name={'close-o'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+
+                          </TouchableOpacity>
+                        </View>
+                        <TextInput                
+                          placeholder={'add items'}       
+                          value={this.state[select_val]}
+                          onChangeText={_value =>setSelect(_value)} 
+                          underlineColorAndroid='transparent' 
+                          style={this.state[index]  != undefined && this.state[index] == true ? [styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}] : {display:'none'}}
+                          />
+                      </View>
+                  </View>
+                  </Animated.View>
+              );
+          }
+          else
+          {
+              let inx = item.index
+              let index = 'select'+item.index
+              let select_val = 'select'+item.index+'_val'
+              let _name =  'column'+item.index+'_name'
+              let _type = 'column'+item.index+'_type'
+              const setName = (_var) => this.setState({[_name]:_var})
+              const setType= (_var) => this.setState({[_type]:_var})
+              const setSelect= (_var) => this.setState({[select_val]:_var})
+              const onSelect = (_var) => this.onSelect(_var)
+              const Reload = (_var) => this.setState({reload:_var})
+              const RemoveColumn = (_var) => this.RemoveColumn(_var)
+              return(
+                  <View key = { key } style = { styles.viewHolder }>                   
+                      <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
+                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
+                          <TextInput                
+                          placeholder={"column name"}      
+                          value={this.state[_name]}
+                          onChangeText={_name => setName(_name)}    
+                          underlineColorAndroid='transparent' 
+                          style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
+                          />
+                        </View>
+                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
+                          <RNPickerSelect
+                              placeholder={placeholder}
+                              items={select}
+                              onValueChange={(value) => {
+                                this.onSelect(_type, value, item.index)
+                              }}/*
+                              onUpArrow={() => {
+                                  this.inputRefs.firstTextInput.focus();r
+                              }}
+                              onDownArrow={() => {
+                                  this.inputRefs.favSport1.togglePicker();
+                              }} */
+                              style={pickerSelectStyles}
+                              value={this.state[_type]}
+                            //  ref={(el) => {
+                              //   this.inputRefs.favSport0 = el;
+                            // }}
+                          />   
+                        </View>
+                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
+                        <TouchableOpacity 
+                          activeOpacity = {0.9}
+                          onPress={()=> RemoveColumn(item.index)} 
+                          >
+                           <Icon name={'close-o'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+
                           </TouchableOpacity>
                         </View>
                         <TextInput                
@@ -421,7 +430,7 @@ InsertTable(table_name, array_column, array_select){
         <TouchableOpacity
               activeOpacity = {0.9}
               style={{backgroundColor: '#01579b', padding: 10}}
-              onPress={() =>  this.props.navigation.navigate("TabScreen", {otherParam: "saea2"})} 
+              onPress={() =>  this.props.navigation.navigate("TodayScreen", {otherParam: "saea2"})} 
               >
               <Text style={{color:"#FFF", textAlign:'left'}}>
                   {"<"} BACK
@@ -431,11 +440,11 @@ InsertTable(table_name, array_column, array_select){
         <View style={{ flex: 1, alignItems: 'center'}}>
         <Text>table name</Text>
         <TextInput                
-        placeholder="table_name"        
+        placeholder="table name"        
         value={this.state.table_name}
         onChangeText={table_name => this.setState({table_name})}    
         underlineColorAndroid='transparent' 
-        style={[styles.TextInputStyleClass, {width:'48%', paddingRight:'1%', fontSize: 15}]}
+        style={[styles.TextInputStyleClass, {width:'98%', margin:'1%', fontSize: 15}]}
         />
         <ScrollView>
             <View style = {{ flex: 1, padding: 4 }}>
@@ -446,12 +455,9 @@ InsertTable(table_name, array_column, array_select){
         </ScrollView>
         <TouchableOpacity 
         activeOpacity = {0.9}
-        style={styles.Button}
         onPress={()=> this.AddColumn()} 
         >
-          <Text style={{color:"#fff", textAlign:'center'}}>
-          add column
-          </Text>
+          <Icon name={'plus'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'center', paddingRight:10}} />
         </TouchableOpacity>
        
          <View style={{width:'100%', marginTop:0, marginBottom: 15, padding:10}}>                
@@ -494,9 +500,11 @@ TextInputStyleClass: {
   marginBottom: 7,
   margin:1,
   height: 40,
-  borderWidth: 1,
   borderColor: '#2196F3', 
-  borderRadius: 5
+  backgroundColor: '#FFF',
+  borderRadius: 5,
+  elevation: 2,
+ 
   },
 Button:{
   backgroundColor: '#01579b', 
