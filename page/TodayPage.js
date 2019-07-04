@@ -14,7 +14,7 @@ const tableArray = new Array()
 var arrays = new Array()
 var columns = new Array()
 var values = new Array()
-
+var RecordDates = new Array()
 const placeholder = {
   label: 'Select a table',
   value: null,
@@ -64,7 +64,8 @@ export default class TodayPage extends React.Component {
       table: undefined,
       dataExist : false,
       readonly: false,
-      showUpdate:false
+      showUpdate:false,
+      backColor: '#CEF6F5'
     };
     AsyncStorage.getItem('table', (err, result) => {
       this.setState({table:result})         
@@ -73,7 +74,7 @@ export default class TodayPage extends React.Component {
 
     this.getTableDB = this.getTableDB.bind(this)
     this.getValues = this.getValues.bind(this)
-    this.getTableName()
+    this.getTableName()    
     this.Go = this.Go.bind(this)
   }
 
@@ -94,13 +95,14 @@ export default class TodayPage extends React.Component {
     var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
 
     AsyncStorage.getItem('table', (err, result) => {
-        this.setState({table:result, today: today, today_show: today_show, selectedDate: today})            
+        this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})            
       }) 
   }
 
   getTableDB(table_name){
     const setColumn = (column) => this.setState({column: column})
     const getValue = (table_id) => this.getValues(table_id, this.state.selectedDate);
+    const getAllPoints = (table_id) => this.getAllPoints(table_id, this.state.thisMonth);
     db.transaction(tx => {
       db.transaction(function(tx) {
         tx.executeSql(
@@ -162,6 +164,7 @@ export default class TodayPage extends React.Component {
                     console.log("info!!", arrays)
                     setColumn(columns)            
                     getValue(table_id)   
+                    getAllPoints(table_id)
                   }
                 }
               )
@@ -275,8 +278,9 @@ export default class TodayPage extends React.Component {
   getValues(table_id, date){    
    // alert(this.state.today)
   //  alert(this.state.column)
-
+  
   const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
+  const setColor = (_var1) => this.setState({backColor: _var1})
   const setState = (_var) => this.setState({table_id: _var})
   const Exist = (_var) =>  this.setState({dataExist : _var})  
   const showUpdate = this.state.showUpdate
@@ -290,7 +294,8 @@ export default class TodayPage extends React.Component {
           var len = results.rows.length;
         //  값이 있는 경우에 
         var column, value
-          if (len > 0) { 
+          if (len > 0) {
+            setColor('#CEF6F5') 
             if(showUpdate){
               setValue('readonly', false)
             }else{
@@ -310,7 +315,8 @@ export default class TodayPage extends React.Component {
             } 
             setState(table_id)
             Exist(true)
-          }else{          
+          }else{    
+              setColor('#ECF8E0')       
               setValue('readonly', false)            
             
             console.log("column!",column_origin)
@@ -333,7 +339,9 @@ export default class TodayPage extends React.Component {
   
   InsertValueToTable(table_id, date, array_column){
     const setReadOnly = (_var) => this.setState({readonly: _var})
-    const setExist = (_var) => this.setState({dataExist: _var})
+    const setExist = (_var) => this.setState({dataExist: _var})    
+    const setColor = (_var) => this.setState({backColor:_var})
+    const getAllPoints = (_var) => this.getAllPoints(this.state.table_id, this.state.thisMonth)
     console.log(table_id + date + arrays);
     console.log("here", array_column)
     var arrays = new Array()
@@ -358,6 +366,8 @@ export default class TodayPage extends React.Component {
             alert("data inserted")
             setReadOnly(true)
             setExist(true)
+            setColor('#CEF6F5')
+            getAllPoints(true)
           } else {
             console.log('value insert : ', "failed")
           }
@@ -468,6 +478,74 @@ export default class TodayPage extends React.Component {
     this.setState({selectedDate: selectedDate})
     this.getValues(this.state.table_id, selectedDate)
   }
+
+  getAllPoints(table_id, month){
+    const setRecords = (_var) => this.setState({records: _var})
+    RecordDates.length = 0
+      // 날짜에 맞는 DB값 모두 가져오기   
+        db.transaction(tx => {
+         tx.executeSql(
+          'SELECT * FROM valueinfo where table_id = ? and record_date LIKE ?',
+          [table_id, '2019-'+month+'%'],
+          (tx, results) => {
+            var len = results.rows.length;
+            if (len > 0) {     
+                console.log("get data")    
+                var date = results.rows.item(0).record_date;
+                var date;
+                var realDate;
+                var y,m,d
+                for(var i=0; i<results.rows.length; i++){
+                  date = results.rows.item(i).record_date;                  
+                  console.log("date", date)
+                  if(RecordDates.indexOf(date) < 0 ){
+                    RecordDates.push(date)
+                  }
+                }
+                this.recordFunc(RecordDates)
+                console.log('get data : ', RecordDates)
+                            
+            } else {                  
+              console.log('get data : ', "no value")        
+              setRecords([])
+            }
+          }
+        );
+      });  
+
+    }
+  recordFunc = (RecordDates) => {
+    console.log("recordFunc")
+    // reduce -> 배열에서 중복되는 것을 빼준다.
+    RecordDates = RecordDates.reduce(function(a,b){if(a.indexOf(b)<0)
+      a.push({
+      date:b,
+      dots: [
+          {
+          color: "#01579b",
+          selectedDotColor: "#01579b",
+          }
+      ],
+   });return a;},[]);
+   console.log(RecordDates)
+   this.setState({records: RecordDates})
+    }
+
+  onWeekendSelect(date){
+  //  var date = date.setDate(date.getDate() + 3)
+    console.log(this.state.table_id)
+    date.setDate(date.getDate() + 6)
+    //alert(date.getMonth)
+    var month = date.getMonth()+1   
+    if(month < 10){
+        month = "0"+month;
+    }
+    if(this.state.thisMonth !== month){
+      this.setState({thisMonth: month})
+      this.getAllPoints(this.state.table_id, month)
+    }
+  }
+    
   render() {
     return (     
       <View style={{ flex: 1 }}>
@@ -515,8 +593,11 @@ export default class TodayPage extends React.Component {
         </View>
         <CalendarStrip
        // calendarAnimation={{type: 'sequence', duration:5}}
-        daySelectionAnimation={{type: 'background', duration: 300, highlightColor: '#9265DC'}}
+        daySelectionAnimation={{type: 'background', duration: 300, highlightColor: this.state.backColor}}
         onDateSelected={(date)=>this.onDateSelect(date._d)}
+        markedDates={ this.state.records }
+        markedDatesStyle={{position:'absolute'}}
+        onWeekChanged={(date)=>this.onWeekendSelect(date._d)}
         style={{height:100, paddingTop: 0, paddingBottom: 10}}
       />
         <Text>{this.state.table}</Text>
