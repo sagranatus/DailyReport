@@ -1,7 +1,7 @@
 // Home screen
 import React, { Component } from 'react';
 //import react in our code.
-import { AsyncStorage, Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
+import { AsyncStorage, Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard, ScrollView } from 'react-native';
 //import all the components we are going to use.
 import {NavigationEvents} from 'react-navigation'
 import { openDatabase } from 'react-native-sqlite-storage'
@@ -10,6 +10,7 @@ var db = openDatabase({ name: 'TableDatabase.db' })
 import RNPickerSelect from 'react-native-picker-select';
 import CalendarStrip from 'react-native-calendar-strip';
 import Icon from 'react-native-vector-icons/EvilIcons';
+import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 const tableArray = new Array()
 var arrays = new Array()
 var columns = new Array()
@@ -65,21 +66,16 @@ export default class TodayPage extends React.Component {
       dataExist : false,
       readonly: false,
       showUpdate:false,
-      backColor: '#CEF6F5'
-    };
-    AsyncStorage.getItem('table', (err, result) => {
-      this.setState({table:result})         
-      this.getTableDB(result)       
-    })
-
+      backColor: '#CEF6F5',
+      tableArray: []
+    };   
+    
     this.getTableDB = this.getTableDB.bind(this)
     this.getValues = this.getValues.bind(this)
-    this.getTableName()    
     this.Go = this.Go.bind(this)
   }
 
-  componentWillMount(){
-    
+  componentWillMount(){  
     var weekEngShortName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
     var date = new Date();
     var year = date.getFullYear();
@@ -94,14 +90,65 @@ export default class TodayPage extends React.Component {
     var today = year+"-"+month+"-"+day
     var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
 
-    AsyncStorage.getItem('table', (err, result) => {
-        this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})            
+    AsyncStorage.getItem('table', (err, result) => {      
+    this.getTableName(result)  
+        this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
+        this.getTableDB(result)            
       }) 
   }
 
+  
+  getTableName(table){    
+    const setState = (_var) => this.setState({tableArray:_var, table:table})
+    db.transaction(tx => {
+      tx.executeSql(
+      'SELECT * FROM tableinfo',
+      [],
+      (tx, results) => {
+        var len = results.rows.length;
+      //  값이 있는 경우에 
+        if (len > 0) {
+          const tableArray = new Array() 
+          console.log("tables exist")
+          for(var i=0; i<results.rows.length; i++){
+          const table_name = results.rows.item(i).table_name   
+          if(tableArray.indexOf(table_name) < 0 ){
+            console.log(table_name)
+            tableArray.push({
+              label: table_name,
+              value: table_name,
+            });
+            console.log(tableArray)
+            } 
+            if(i == results.rows.length-1){    
+              tableArray.push({
+                label: "add table",
+                value: "add table"
+              });              
+            }
+          }
+          setState(tableArray)
+           
+        }else{
+          console.log("no table _ app.js")
+          if(tableArray.length == 0){
+            tableArray.push({
+              label: "add table",
+              value: "add table"
+            });  
+            setState(true)
+          }
+          
+        }
+      });
+    });
+  }
+
   getTableDB(table_name){
+    console.log("thisMonth",this.state.thisMonth)
     const setColumn = (column) => this.setState({column: column})
     const getValue = (table_id) => this.getValues(table_id, this.state.selectedDate);
+    const setState = (_var) => this.setState({table_id: _var})
     const getAllPoints = (table_id) => this.getAllPoints(table_id, this.state.thisMonth);
     db.transaction(tx => {
       db.transaction(function(tx) {
@@ -113,6 +160,7 @@ export default class TodayPage extends React.Component {
           //  값이 있는 경우에 
             if (len > 0) {  
               var table_id = results.rows.item(0).table_id
+              setState(table_id)
               tx.executeSql(
                 'SELECT * FROM typeinfo where table_id = ?',
                 [table_id],
@@ -177,6 +225,146 @@ export default class TodayPage extends React.Component {
     });
   }
 
+  getValues(table_id, date){    
+
+   const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
+   const setColor = (_var1) => this.setState({backColor: _var1})   
+   const Exist = (_var) =>  this.setState({dataExist : _var})  
+   const showUpdate = this.state.showUpdate
+   var column_origin = this.state.column;
+   db.transaction(tx => {
+       db.transaction(function(tx) {
+       tx.executeSql(
+         'SELECT * FROM valueinfo where record_date = ? AND table_id = ? ',
+         [date, table_id],
+         (tx, results) => {
+           var len = results.rows.length;
+         //  값이 있는 경우에 
+         var column, value
+           if (len > 0) {
+             setColor('#CEF6F5') 
+             if(showUpdate){
+               setValue('readonly', false)
+             }else{
+             setValue('readonly', true)
+             }
+             values.length = 0
+            // alert("there is!")
+             for(var i=0; i<results.rows.length; i++){
+               column = results.rows.item(i).column_name
+               value = results.rows.item(i).column_value
+             //  setValue(column, value) // 수정때문에 필요하다.
+               console.log(column+value)
+               const itemToFind = arrays.find(function(item) {return item.title === column}) 
+               const idx = arrays.indexOf(itemToFind)           
+               arrays[idx]["value"] = value
+               console.log(arrays)
+             } 
+             Exist(true)
+           }else{    
+               setColor('#ECF8E0')       
+               setValue('readonly', false)            
+             
+             console.log("column!",column_origin)
+             column_origin.map(( item_, key ) =>
+             {
+               const itemToFind = arrays.find(function(item) {return item.title === item_.column}) 
+               const idx = arrays.indexOf(itemToFind)           
+               arrays[idx]["value"] = ""
+             })  
+             console.log(arrays)
+             Exist(false)
+           }
+         }
+       )
+     })
+   });
+ }
+
+ getValuesForUpdate(table_id, date){    
+
+  const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
+  db.transaction(tx => {
+      db.transaction(function(tx) {
+      tx.executeSql(
+        'SELECT * FROM valueinfo where record_date = ? AND table_id = ? ',
+        [date, table_id],
+        (tx, results) => {
+          var len = results.rows.length;
+        //  값이 있는 경우에 
+        var column, value
+          if (len > 0) {
+            values.length = 0
+           // alert("there is!")
+            for(var i=0; i<results.rows.length; i++){
+              column = results.rows.item(i).column_name
+              value = results.rows.item(i).column_value
+              setValue(column, value) // 수정때문에 필요하다
+            } 
+          }else{ 
+          }
+        }
+      )
+    })
+  });
+}
+
+ 
+ 
+ getAllPoints(table_id, month){
+  const setRecords = (_var) => this.setState({records: _var})
+  RecordDates.length = 0
+    // 날짜에 맞는 DB값 모두 가져오기   
+      db.transaction(tx => {
+       tx.executeSql(
+        'SELECT * FROM valueinfo where table_id = ? and record_date LIKE ?',
+        [table_id, '2019-'+month+'%'],
+        (tx, results) => {
+          var len = results.rows.length;
+          if (len > 0) {     
+              console.log("get data")    
+              var date = results.rows.item(0).record_date;
+              var date;
+              var realDate;
+              var y,m,d
+              for(var i=0; i<results.rows.length; i++){
+                date = results.rows.item(i).record_date;                  
+                console.log("date", date)
+                if(RecordDates.indexOf(date) < 0 ){
+                  RecordDates.push(date)
+                }
+              }
+              this.recordFunc(RecordDates)
+              console.log('get data : ', RecordDates)
+                          
+          } else {                  
+            console.log('get data : ', "no value")        
+            setRecords([])
+          }
+        }
+      );
+    });  
+  }
+  
+recordFunc = (RecordDates) => {
+  console.log("recordFunc")
+  // reduce -> 배열에서 중복되는 것을 빼준다.
+  RecordDates = RecordDates.reduce(function(a,b){if(a.indexOf(b)<0)
+    a.push({
+    date:b,
+    dots: [
+        {
+        color: "#01579b",
+        selectedDotColor: "#01579b",
+        }
+    ],
+ });return a;},[]);
+ console.log(RecordDates)
+ this.setState({records: RecordDates})
+  }
+  
+
+  // insert 및 update function
   InsertValue(date){
     Keyboard.dismiss()
   //  columns = this.state.column
@@ -216,7 +404,7 @@ export default class TodayPage extends React.Component {
     Keyboard.dismiss()
     //  columns = this.state.column
       console.log("columns",this.state.column)
-      if(this.state.column !== undefined){    
+      if(this.state.column !== undefined){                 
       var arrays = new Array()
         this.state.column.map(( item, key ) =>
       {      
@@ -239,102 +427,8 @@ export default class TodayPage extends React.Component {
       } 
     }
 
-    UpdateValueToTable(table_id,date,array_column){
-    console.log("here", table_id + date)
-    const setReadOnly = (_var) => this.setState({readonly: _var})
-    const setUpdate = (_var) => this.setState({showUpdate: _var})
-    const setState = (_var) => this.setState({reload:_var})
-    var arrays = new Array()
-    var add = ''
-    array_column.map(( item ) =>
-        {
-          arrays.push(item.column, item.value )
-          add = add+"WHEN ? THEN ? "  
-        }  
-    )
-    arrays.push(table_id, date)
-    console.log(arrays)
-    console.log(add)
-    db.transaction(function(tx) {
-      tx.executeSql(
-
-        'UPDATE valueinfo SET column_value = CASE column_name '+add+' ELSE column_value END WHERE table_id =? and record_date =?',
-        arrays,
-        (tx, results) => {                            
-          if (results.rowsAffected > 0) {
-            console.log('value update : ', "success") 
-            alert("data updated")
-            setUpdate(false)
-            setReadOnly(true)
-          } else {
-            console.log('value update : ', "failed")
-          }
-        }
-      )
-    });  
-
-  }
-
-  getValues(table_id, date){    
-   // alert(this.state.today)
-  //  alert(this.state.column)
+    
   
-  const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
-  const setColor = (_var1) => this.setState({backColor: _var1})
-  const setState = (_var) => this.setState({table_id: _var})
-  const Exist = (_var) =>  this.setState({dataExist : _var})  
-  const showUpdate = this.state.showUpdate
-  var column_origin = this.state.column;
-  db.transaction(tx => {
-      db.transaction(function(tx) {
-      tx.executeSql(
-        'SELECT * FROM valueinfo where record_date = ? AND table_id = ? ',
-        [date, table_id],
-        (tx, results) => {
-          var len = results.rows.length;
-        //  값이 있는 경우에 
-        var column, value
-          if (len > 0) {
-            setColor('#CEF6F5') 
-            if(showUpdate){
-              setValue('readonly', false)
-            }else{
-            setValue('readonly', true)
-            }
-            values.length = 0
-           // alert("there is!")
-            for(var i=0; i<results.rows.length; i++){
-              column = results.rows.item(i).column_name
-              value = results.rows.item(i).column_value
-              setValue(column, value)
-              console.log(column+value)
-              const itemToFind = arrays.find(function(item) {return item.title === column}) 
-              const idx = arrays.indexOf(itemToFind)           
-              arrays[idx]["value"] = value
-              console.log(arrays)
-            } 
-            setState(table_id)
-            Exist(true)
-          }else{    
-              setColor('#ECF8E0')       
-              setValue('readonly', false)            
-            
-            console.log("column!",column_origin)
-            column_origin.map(( item_, key ) =>
-            {
-              const itemToFind = arrays.find(function(item) {return item.title === item_.column}) 
-              const idx = arrays.indexOf(itemToFind)           
-              arrays[idx]["value"] = ""
-            })  
-            setState(table_id)
-            console.log(arrays)
-            Exist(false)
-          }
-        }
-      )
-    })
-  });
-}
 
   
   InsertValueToTable(table_id, date, array_column){
@@ -377,91 +471,93 @@ export default class TodayPage extends React.Component {
 
   }
 
-  
-  Go(value){    
-    this.getTableDB(value)    
-    this.setState({
-      table: value,
-  },() => {
-   // alert(this.state.table)
-    if(this.state.table == "add table"){      
+  UpdateValueToTable(table_id,date,array_column){
+    console.log("here", table_id + date)
+    const setReadOnly = (_var) => this.setState({readonly: _var})
+    const setUpdate = (_var) => this.setState({showUpdate: _var})
+    var arrays = new Array()
+    var add = ''
+    array_column.map(( item ) =>
+        {
+          arrays.push(item.column, item.value )
+          add = add+"WHEN ? THEN ? "  
+        }  
+    )
+    arrays.push(table_id, date)
+    console.log(arrays)
+    console.log(add)
+    db.transaction(function(tx) {
+      tx.executeSql(
+
+        'UPDATE valueinfo SET column_value = CASE column_name '+add+' ELSE column_value END WHERE table_id =? and record_date =?',
+        arrays,
+        (tx, results) => {                            
+          if (results.rowsAffected > 0) {
+            console.log('value update : ', "success") 
+            alert("data updated")
+            setUpdate(false)
+            setReadOnly(true)
+          } else {
+            console.log('value update : ', "failed")
+          }
+        }
+      )
+    });  
+
+  }
+
+  // table이름 변경시에
+  Go(value){     
+    if(value == "add table"){      
       this.props.navigation.navigate("AddtableScreen")
-      AsyncStorage.getItem('table', (err, result) => {
-        this.setState({table:result})        
-      })
       }else{
         try {
-          AsyncStorage.setItem('table', this.state.table);
-          this.setState({reload: !this.state.reload})
+          AsyncStorage.setItem('table', value);
+          if(value !== undefined && value !== ""){
+          this.setState({table: value})          
+          this.getTableDB(value)
+          }          
         } catch (error) {
           console.error('AsyncStorage error: ' + error.message);
         }
+      }   
+  }
+
+  setChange(){ 
+    // 테이블 add된 경우 add된 테이블을 가져옴
+    const { params } = this.props.navigation.state;
+    if(params != null){
+      console.log("navigation params existed : ",params.otherParam)     
+      var weekEngShortName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
+      var date = new Date();
+      var year = date.getFullYear();
+      var month = date.getMonth()+1
+      var day = date.getDate();
+      if(month < 10){
+          month = "0"+month;
       }
-    })
+      if(day < 10){
+          day = "0"+day;
+      } 
+      var today = year+"-"+month+"-"+day
+      var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
+  
+      AsyncStorage.getItem('table', (err, result) => {
+        this.getTableName(result)
+          this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
+          this.getTableDB(result)            
+        }) 
+      
+      }
   }
 
-  getTableName(){
-    db.transaction(tx => {
-      tx.executeSql(
-      'SELECT * FROM tableinfo',
-      [],
-      (tx, results) => {
-        var len = results.rows.length;
-      //  값이 있는 경우에 
-        if (len > 0) {
-          tableArray.length = 0       
-          console.log("tables exist")
-          for(var i=0; i<results.rows.length; i++){
-          const table_name = results.rows.item(i).table_name   
-          if(tableArray.indexOf(table_name) < 0 ){
-            console.log(table_name)
-            tableArray.push({
-              label: table_name,
-              value: table_name,
-            });
-            console.log(tableArray)
-          //  this.setState({reload: !this.state.reload})
-            } 
-            if(i == results.rows.length-1){    
-              tableArray.push({
-                label: "add table",
-                value: "add table"
-              });  
-              AsyncStorage.getItem('table', (err, result) => {
-                this.setState({table:result})        
-              })    
-            }
-          }
-        }else{
-          console.log("no table _ app.js")
-          if(tableArray.length == 0){
-            tableArray.push({
-              label: "add table",
-              value: "add table"
-            });  
-            this.setState({reload:true})
-          }
-          
-        }
-      });
-    });
-  }
-
-
-  setChange(){    
-  //  alert("Main1 setChange()")
-    AsyncStorage.getItem('table', (err, result) => {
-      this.setState({table:result})
-    //  this.getTableDB(result)    
-    })
-    
-  }
-
+  // listview row값에서 값 변경시 이벤트 - setState
   onChange(title,value){
     this.setState({[title]:value})
     console.log(this.state.title)
   }
 
+  // 달력관련이벤트 
   onDateSelect(date){
     Keyboard.dismiss()
     var year = date.getFullYear();
@@ -477,59 +573,20 @@ export default class TodayPage extends React.Component {
     console.log(selectedDate)
     this.setState({selectedDate: selectedDate})
     this.getValues(this.state.table_id, selectedDate)
+
+    //만약 이동한 날짜가 일요일이나 월요일인 경우에 월이 다르면 getAllPoints 가져옴
+    if(date.getDay() == 0 || date.getDay() == 1){
+      var month = date.getMonth()+1   
+      if(month < 10){
+          month = "0"+month;
+      }
+      if(month !== this.state.thisMonth){
+        this.setState({thisMonth: month})
+        this.getAllPoints(this.state.table_id, month)
+      }    
+    }
   }
 
-  getAllPoints(table_id, month){
-    const setRecords = (_var) => this.setState({records: _var})
-    RecordDates.length = 0
-      // 날짜에 맞는 DB값 모두 가져오기   
-        db.transaction(tx => {
-         tx.executeSql(
-          'SELECT * FROM valueinfo where table_id = ? and record_date LIKE ?',
-          [table_id, '2019-'+month+'%'],
-          (tx, results) => {
-            var len = results.rows.length;
-            if (len > 0) {     
-                console.log("get data")    
-                var date = results.rows.item(0).record_date;
-                var date;
-                var realDate;
-                var y,m,d
-                for(var i=0; i<results.rows.length; i++){
-                  date = results.rows.item(i).record_date;                  
-                  console.log("date", date)
-                  if(RecordDates.indexOf(date) < 0 ){
-                    RecordDates.push(date)
-                  }
-                }
-                this.recordFunc(RecordDates)
-                console.log('get data : ', RecordDates)
-                            
-            } else {                  
-              console.log('get data : ', "no value")        
-              setRecords([])
-            }
-          }
-        );
-      });  
-
-    }
-  recordFunc = (RecordDates) => {
-    console.log("recordFunc")
-    // reduce -> 배열에서 중복되는 것을 빼준다.
-    RecordDates = RecordDates.reduce(function(a,b){if(a.indexOf(b)<0)
-      a.push({
-      date:b,
-      dots: [
-          {
-          color: "#01579b",
-          selectedDotColor: "#01579b",
-          }
-      ],
-   });return a;},[]);
-   console.log(RecordDates)
-   this.setState({records: RecordDates})
-    }
 
   onWeekendSelect(date){
   //  var date = date.setDate(date.getDate() + 3)
@@ -540,24 +597,76 @@ export default class TodayPage extends React.Component {
     if(month < 10){
         month = "0"+month;
     }
+    // 다른 월인 경우에 getAllPoints 다시 가져옴. thisMonth setting
     if(this.state.thisMonth !== month){
       this.setState({thisMonth: month})
       this.getAllPoints(this.state.table_id, month)
     }
   }
+
+  // swipe event
+  onSwipe(gestureName, gestureState) {
+    var date = this.state.selectedDate
+    var y = date.substr(0,4),
+    m = date.substr(5,2) -1,
+    d = date.substr(8,2);
+    var D = new Date(y,m,d);
+    console.log(date + D)
+    const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
+    this.setState({gestureName: gestureName});
+    switch (gestureName) {
+      case SWIPE_UP:
+        this.setState({backgroundColor: 'red'});
+        break;
+      case SWIPE_DOWN:
+        this.setState({backgroundColor: 'green'});
+        break;
+      case SWIPE_LEFT:
+       D.setDate(D.getDate() + 1)
+       if (this.calendar !== null) {
+        this.calendar.setSelectedDate(D)	
+        console.log(D.getDay())
+       if(D.getDay() ==6){
+          this.calendar.updateWeekView
+        }
+      //  
+      }
+        break;
+      case SWIPE_RIGHT:
+        D.setDate(D.getDate() - 1)
+        if (this.calendar !== null) {
+          this.calendar.setSelectedDate(D)	
+           if(D.getDay() == 0){
+            this.calendar.updateWeekView
+          }
+        }
+        break;
+    }
+  }
     
   render() {
-    return (     
-      <View style={{ flex: 1 }}>
+    return (        
+      <GestureRecognizer
+      onSwipe={(direction, state) => this.onSwipe(direction, state)}
+      config={{
+        velocityThreshold: 0.3,
+        directionalOffsetThreshold: 80
+      }}
+      style={{
+        flex: 1
+      }}
+      >   
+      <ScrollView style={{ flex: 1}}>
         <NavigationEvents
       onWillFocus={payload => {console.log(payload),
         this.setChange();
-      }} />  
+      }} /> 
+       
         <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', borderBottomColor:"gray", borderBottomWidth:0.5}}>
          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%',  float:'left'}}>
            <RNPickerSelect
               placeholder={placeholder}
-              items={tableArray}
+              items={this.state.tableArray}
               onValueChange={(value) => {
                 this.Go(value)
               }}/*
@@ -592,6 +701,9 @@ export default class TodayPage extends React.Component {
           </View>
         </View>
         <CalendarStrip
+        ref={(ref) => this.calendar = ref} 
+        startingDate={this.state.selectedDate}
+        selectedDate={this.state.selectedDate}
        // calendarAnimation={{type: 'sequence', duration:5}}
         daySelectionAnimation={{type: 'background', duration: 300, highlightColor: this.state.backColor}}
         onDateSelected={(date)=>this.onDateSelect(date._d)}
@@ -600,8 +712,7 @@ export default class TodayPage extends React.Component {
         onWeekChanged={(date)=>this.onWeekendSelect(date._d)}
         style={{height:100, paddingTop: 0, paddingBottom: 10}}
       />
-        <Text>{this.state.table}</Text>
-        <Text>{this.state.today_show}</Text>
+        <Text style={this.state.table == undefined ? {} : {display:'none'}}>Please add table</Text>
         <CustomListview
           tableName={this.state.table}
           itemList={arrays}
@@ -622,7 +733,7 @@ export default class TodayPage extends React.Component {
         <TouchableOpacity 
         activeOpacity = {0.9}        
         style={this.state.dataExist ? styles.Button : {display:'none'}}
-        onPress={()=> this.setState({readonly: false, showUpdate: true})} 
+        onPress={()=> [this.setState({readonly: false, showUpdate: true}),  this.getValuesForUpdate(this.state.table_id, this.state.selectedDate)]} 
         >
           <Text style={!this.state.showUpdate ? {color:"#fff", textAlign:'center'} : {display:'none'}}>
           edit values
@@ -642,7 +753,9 @@ export default class TodayPage extends React.Component {
           update today values
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+      
+      </GestureRecognizer>
     );
   }
 }

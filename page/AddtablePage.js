@@ -1,7 +1,7 @@
 // Home screen
 import React, { Component } from 'react';
 //import react in our code.
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Button,KeyboardAvoidingView,Animated, ScrollView  } from 'react-native';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Button,KeyboardAvoidingView,Animated, ScrollView,AsyncStorage } from 'react-native';
 import { openDatabase } from 'react-native-sqlite-storage'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import Icon from 'react-native-vector-icons/EvilIcons';
@@ -167,6 +167,26 @@ checkColumn(){
     if(array_column.length == 0){
       alert("add column")
     }
+
+    if(array_column.length == 0){
+      alert("add column")
+    }
+
+    var tmpA, tmpB;
+    // column name 같은 경우 확인
+    for(i = 1; i < array_column.length; i++){
+      for(j = 0; j < i ; j++){
+      // 값비교
+         tmpA = array_column[i].column;
+         tmpB = array_column[j].column;
+
+         if(tmpA == tmpB){
+           alert("column name should be different")
+           return false;
+         }
+      }
+   }
+
     if(idx2 == -1 && idx2 == -1 && idx3 == -1 && this.state.table_name !== undefined && array_column.length !== 0){
       alert("table made successfully")
       this.InsertTable(this.state.table_name, array_column, array_select)
@@ -175,6 +195,7 @@ checkColumn(){
 }
 
 InsertTypes(table_id, array_column, array_select){
+  const navi = (_var) => this.props.navigation.navigate("TodayScreen", {otherParam: _var})
   console.log("here", array_column)
   var arrays = new Array()
   var add = ''
@@ -195,6 +216,7 @@ InsertTypes(table_id, array_column, array_select){
       (tx, results) => {                            
         if (results.rowsAffected > 0) {
           console.log('type insert : ', "success") 
+          navi("saea")
         } else {
           console.log('type insert : ', "failed")
         }
@@ -235,6 +257,7 @@ InsertTypes(table_id, array_column, array_select){
 }
 
 InsertTable(table_name, array_column, array_select){
+  
   const InsertTypes = (val, val2, val3)=> this.InsertTypes(val, val2, val3);
   db.transaction(tx => {
     db.transaction(function(tx) {
@@ -261,6 +284,11 @@ InsertTable(table_name, array_column, array_select){
                             console.log('insertData : ', "success" + results.rows.item(0).table_id)     
                             console.log(array_column)
                             var id = results.rows.item(0).table_id
+                            try {
+                              AsyncStorage.setItem('table', table_name);
+                            } catch (error) {
+                              console.error('AsyncStorage error: ' + error.message);
+                            }
                             InsertTypes( id, array_column, array_select)
                           }
                         }
@@ -430,7 +458,7 @@ InsertTable(table_name, array_column, array_select){
         <TouchableOpacity
               activeOpacity = {0.9}
               style={{backgroundColor: '#01579b', padding: 10}}
-              onPress={() =>  this.props.navigation.navigate("TodayScreen", {otherParam: "saea2"})} 
+              onPress={() =>  this.props.navigation.navigate("TodayScreen")} 
               >
               <Text style={{color:"#FFF", textAlign:'left'}}>
                   {"<"} BACK
