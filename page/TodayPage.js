@@ -176,7 +176,6 @@ export default class TodayPage extends React.Component {
                       type = results.rows.item(i).column_type
                       console.log(column+type)
                       if(type == "select"){
-                        var selects = new Array()
                         tx.executeSql(
                           'SELECT * FROM selectinfo where table_id = ? AND column_name=?',
                           [table_id, column],
@@ -185,7 +184,8 @@ export default class TodayPage extends React.Component {
                             var len = results.rows.length;
                             var column, select_val
                           //  값이 있는 경우에 
-                            if (len > 0) {
+                            if (len > 0) {                              
+                              var selects = new Array()
                               for(var i=0; i<results.rows.length; i++){
                                 column = results.rows.item(i).column_name
                                 select_val = results.rows.item(i).select_value

@@ -79,7 +79,7 @@ onSelect(_type, selected, index){
 }
 
 AddColumn = () =>
-{
+{  
     this.animatedValue.setValue(0);
 
     let newlyAddedValue = { index: this.index }
@@ -125,6 +125,7 @@ checkColumn(){
       {             
           
            let select_val = 'select'+item.index+'_val'
+           let select_all = 'selectall'+item.index+'_val'
            let _name =  'column'+item.index+'_name'
            let _type = 'column'+item.index+'_type'       
           console.log( this.state[_name] + this.state[_type])
@@ -133,7 +134,9 @@ checkColumn(){
             if(this.state[select_val] !== undefined){              
               console.log( this.state[_name] + this.state[select_val])
               var arrays = new Array()
-              arrays = this.state[select_val].split(',');
+              //arrays = this.state[select_val].split(',');
+              arrays = this.state[select_all]
+              console.log("Selects!!!", arrays)
               arrays.map(( item, key ) =>
                array_select.push({column:this.state[_name], select:item})
               )              
@@ -329,6 +332,7 @@ InsertTable(table_name, array_column, array_select){
               const setType= (_var) => this.setState({[_type]:_var})
               const setSelect= (_var) => this.setState({[select_val]:_var})
               const onSelect = (_var) => this.onSelect(_var)
+              
               return(
                   <Animated.View key = { key } style = {[ styles.viewHolder, { opacity: this.animatedValue, transform: [{ translateY: animationValue }] }]}>           
                      <View key = { key } style = { styles.viewHolder }>                   
@@ -387,6 +391,7 @@ InsertTable(table_name, array_column, array_select){
           {
               let inx = item.index
               let index = 'select'+item.index
+              let select_all = 'selectall'+item.index+'_val'
               let select_val = 'select'+item.index+'_val'
               let _name =  'column'+item.index+'_name'
               let _type = 'column'+item.index+'_type'
@@ -395,7 +400,9 @@ InsertTable(table_name, array_column, array_select){
               const setSelect= (_var) => this.setState({[select_val]:_var})
               const onSelect = (_var) => this.onSelect(_var)
               const Reload = (_var) => this.setState({reload:_var})
+              const setAll = (_var) => this.setState({[select_all] : _var})
               const RemoveColumn = (_var) => this.RemoveColumn(_var)
+             
               return(
                   <View key = { key } style = { styles.viewHolder }>                   
                       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
@@ -437,13 +444,28 @@ InsertTable(table_name, array_column, array_select){
 
                           </TouchableOpacity>
                         </View>
+                        <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10} : {display:'none'}}>
+                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
                         <TextInput                
                           placeholder={'add items'}       
                           value={this.state[select_val]}
                           onChangeText={_value =>setSelect(_value)} 
                           underlineColorAndroid='transparent' 
-                          style={this.state[index]  != undefined && this.state[index] == true ? [styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}] : {display:'none'}}
+                          style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
                           />
+                          </View>
+                          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
+                            <TouchableOpacity 
+                          activeOpacity = {0.9}
+                          onPress={()=> (this.state[select_val] !== "" && this.state[select_all].indexOf(this.state[select_val]) == -1) ? [setSelect(""), this.state[select_all].push(this.state[select_val])] : {}} 
+                          >
+                           <Icon name={'plus'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'left', paddingRight:10}} />
+                          </TouchableOpacity>
+                          </View>
+                          { this.state[select_all] !== undefined ? this.state[select_all].map((item, key)=>(
+                          <Text key={key} > { item } </Text>)
+                          ) : setAll([])}
+                          </View>                         
                       </View>
                   </View>
               );

@@ -139,7 +139,7 @@ export default class CustomRow extends React.Component {
                     {title} 
                 </Text>
                 </View>
-                <View style={[styles.container_val, {height:70}]} pointerEvents={readonly ? 'none' : null}>
+                <View style={[styles.container_val, {height:'auto'}]} pointerEvents={readonly ? 'none' : null}>
                 <TextInput           
                 multiline={true}     
                 placeholder={'add description'}       
