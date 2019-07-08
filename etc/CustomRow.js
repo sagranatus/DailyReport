@@ -100,8 +100,8 @@ export default class CustomRow extends React.Component {
                    // disabled={readonly ? true : false}
                     placeholder={placeholder}
                     items={select}
-                    onValueChange={(value) => {val !== "" ? {} :  [this.props.onChange(title, value), this.setState({[title+date] : value})]
-                    }}  
+                    onValueChange={(value) =>  [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                    }  
                     style={pickerSelectStyles}
                     value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 />   
@@ -282,12 +282,20 @@ export default class CustomRow extends React.Component {
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
-                <Text style={styles.title}>
+               <Text style={styles.title}>
                     {title} 
                 </Text>
-                <Text style={styles.type}>
-                    {type}
-                </Text>
+                </View>
+                <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
+                <TextInput              
+                placeholder={'add text'} 
+                value={this.state[title+date] == undefined ? val : this.state[title+date]}
+                onChangeText={(value) => {
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                }}  
+                underlineColorAndroid='transparent' 
+                style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
+                />
               </View>
             </View>
             );

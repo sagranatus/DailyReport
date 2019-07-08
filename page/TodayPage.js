@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/EvilIcons';
 import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 const tableArray = new Array()
 var arrays = new Array()
+var arrays_removed = new Array()
 var columns = new Array()
 var values = new Array()
 var RecordDates = new Array()
@@ -67,7 +68,10 @@ export default class TodayPage extends React.Component {
       readonly: false,
       showUpdate:false,
       backColor: '#CEF6F5',
-      tableArray: []
+      tableArray: [{
+        label: "add table",
+        value: "add table"
+      }]
     };   
     
     this.getTableDB = this.getTableDB.bind(this)
@@ -131,13 +135,13 @@ export default class TodayPage extends React.Component {
            
         }else{
           console.log("no table _ app.js")
-          if(tableArray.length == 0){
+         /* if(tableArray.length == 0){
             tableArray.push({
               label: "add table",
               value: "add table"
             });  
             setState(true)
-          }
+          } */
           
         }
       });
@@ -225,13 +229,19 @@ export default class TodayPage extends React.Component {
     });
   }
 
-  getValues(table_id, date){    
-
+  getValues(table_id, date){ 
+    //일단 제거한 뒤에 삽입할 것.
+   for(var j=0; j<arrays.length; j++){
+    arrays[j]["value"] = ""
+   }
+   
+   arrays_removed.length = 0
    const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
    const setColor = (_var1) => this.setState({backColor: _var1})   
    const Exist = (_var) =>  this.setState({dataExist : _var})  
    const showUpdate = this.state.showUpdate
    var column_origin = this.state.column;
+   var column_noval = this.state.column;
    db.transaction(tx => {
        db.transaction(function(tx) {
        tx.executeSql(
@@ -241,7 +251,8 @@ export default class TodayPage extends React.Component {
            var len = results.rows.length;
          //  값이 있는 경우에 
          var column, value
-           if (len > 0) {
+           if (len > 0) {          
+
              setColor('#CEF6F5') 
              if(showUpdate){
                setValue('readonly', false)
@@ -249,22 +260,45 @@ export default class TodayPage extends React.Component {
              setValue('readonly', true)
              }
              values.length = 0
-            // alert("there is!")
+          //   alert("there is!")
              for(var i=0; i<results.rows.length; i++){
-               column = results.rows.item(i).column_name
+           
+               column = results.rows.item(i).column_name 
                value = results.rows.item(i).column_value
+            
              //  setValue(column, value) // 수정때문에 필요하다.
-               console.log(column+value)
+               console.log("Val", column+value)
                const itemToFind = arrays.find(function(item) {return item.title === column}) 
                const idx = arrays.indexOf(itemToFind)           
-               arrays[idx]["value"] = value
-               console.log(arrays)
+               if(idx > -1){
+                arrays[idx]["value"] = value
+                console.log(arrays)
+               }else{
+                 console.log("removed column get", column + value)
+                 // 삭제된 컬럽 값 가져오기
+                 
+                arrays_removed.push({
+                  key: table_id+column, 
+                  title:column,
+                  type: "none",
+                  value: value
+                })
+               }
+
+               if(i == results.rows.length-1){
+                var uniq = {}
+                arrays_removed = arrays_removed.filter(obj => !uniq[obj.title] && (uniq[obj.title] = true));
+             //   arrays_removed = this.getUniqueObjectArray(arrays_removed, title)
+               }
+               
+               console.log("removed",  arrays_removed)
              } 
+             
              Exist(true)
            }else{    
                setColor('#ECF8E0')       
                setValue('readonly', false)            
-             
+             /*
              console.log("column!",column_origin)
              column_origin.map(( item_, key ) =>
              {
@@ -272,7 +306,7 @@ export default class TodayPage extends React.Component {
                const idx = arrays.indexOf(itemToFind)           
                arrays[idx]["value"] = ""
              })  
-             console.log(arrays)
+             console.log(arrays) */
              Exist(false)
            }
          }
@@ -299,6 +333,7 @@ export default class TodayPage extends React.Component {
             for(var i=0; i<results.rows.length; i++){
               column = results.rows.item(i).column_name
               value = results.rows.item(i).column_value
+              console.log("getValuesForupdate", column+value)
               setValue(column, value) // 수정때문에 필요하다
             } 
           }else{ 
@@ -402,23 +437,26 @@ recordFunc = (RecordDates) => {
 
   UpdateValue(date){
     Keyboard.dismiss()
+    const table_id = this.state.table_id
     //  columns = this.state.column
       console.log("columns",this.state.column)
       if(this.state.column !== undefined){                 
       var arrays = new Array()
+      var arrays2 = new Array()
         this.state.column.map(( item, key ) =>
-      {      
-        console.log(item.column + this.state[item.column])      
-        arrays.push({
-          column : item.column,
-          value :  this.state[item.column]
-        })
-      })  
+       { 
+          arrays.push({
+            column : item.column,
+            value :  this.state[item.column]
+          })             
+
+       })  
       const itemToFind = arrays.find(function(item) {return item.value === undefined}) 
       const idx = arrays.indexOf(itemToFind) 
   
       const itemToFind2 = arrays.find(function(item) {return item.value === ""}) 
       const idx2 = arrays.indexOf(itemToFind2) 
+      console.log(arrays)
       if (idx > -1 || idx2 > -1){
         alert("please fill the column value")
       }else{
@@ -472,7 +510,55 @@ recordFunc = (RecordDates) => {
   }
 
   UpdateValueToTable(table_id,date,array_column){
-    console.log("here", table_id + date)
+    const setReadOnly = (_var) => this.setState({readonly: _var})
+    const setUpdate = (_var) => this.setState({showUpdate: _var})
+    var arrays = new Array()
+    var add = ''
+    array_column.map(( item ) =>
+        {
+          db.transaction(function(tx) {
+            tx.executeSql(
+              'SELECT * FROM valueinfo WHERE table_id =? and column_name=? and record_date =?',
+              [table_id, item.column, date],
+              (tx, results) => {                            
+                var len = results.rows.length;
+                //  값이 있는 경우에 
+                  if (len > 0) {
+                    tx.executeSql(
+                      'UPDATE valueinfo SET column_value = ? WHERE table_id =? and column_name=? and record_date =?',
+                      [item.value, table_id, item.column, date],
+                      (tx, results) => {                            
+                        if (results.rowsAffected > 0) {
+                          console.log('value update : ', "success") 
+                        } else {
+                          console.log('value update : ', "failed")
+                        }
+                      }
+                    )
+                  }else{
+                    tx.executeSql(
+                      'INSERT INTO valueinfo (table_id, record_date, column_name, column_value) VALUES (?,?,?,?)',
+                      [table_id, date, item.column, item.value],
+                      (tx, results) => {                            
+                        if (results.rowsAffected > 0) {
+                          console.log('value insert : ', "success") 
+                        } else {
+                          console.log('value insert : ', "failed")
+                        }
+                      }
+                    )
+                  }
+                });
+              });
+              this.setState({showUpdate:false, readonly:true})
+        }  
+    )
+    //arrays.push(table_id, date)
+    //console.log(arrays)
+   // console.log(add)
+
+
+    /*console.log("here", table_id + date)
     const setReadOnly = (_var) => this.setState({readonly: _var})
     const setUpdate = (_var) => this.setState({showUpdate: _var})
     var arrays = new Array()
@@ -486,9 +572,22 @@ recordFunc = (RecordDates) => {
     arrays.push(table_id, date)
     console.log(arrays)
     console.log(add)
+
+    var arrays2 = new Array()
+    var add2 = ''
+    array_column2.map(( item ) =>
+        {
+          arrays2.push(table_id, date, item.column, item.value )
+          add2 = add2+"(?,?,?,?),"  
+        }  
+    )
+  
+    add2 = add2.substr(0, add2.length -1);
+    console.log(arrays2)
+    console.log(add2)
+
     db.transaction(function(tx) {
       tx.executeSql(
-
         'UPDATE valueinfo SET column_value = CASE column_name '+add+' ELSE column_value END WHERE table_id =? and record_date =?',
         arrays,
         (tx, results) => {                            
@@ -504,6 +603,63 @@ recordFunc = (RecordDates) => {
       )
     });  
 
+    db.transaction(function(tx) {
+      tx.executeSql(
+        'INSERT INTO valueinfo (table_id, record_date, column_name, column_value) VALUES '+add2,
+        arrays2,
+        (tx, results) => {                            
+          if (results.rowsAffected > 0) {
+            console.log('value insert : ', "success") 
+          } else {
+            console.log('value insert : ', "failed")
+          }
+        }
+      )
+    });  
+
+*/
+    // 삭제된 값 수정
+    if(arrays_removed.length !== 0){
+      var columns_removed = new Array()
+      console.log("remove1", arrays_removed)
+      arrays_removed.map(( item ) =>
+      {
+        columns_removed.push(item.title)
+      }  
+      )
+      console.log("remove2", columns_removed)
+  
+      var arrays_ = new Array()
+      var add_ = ''
+      columns_removed.map(( item, key ) =>
+      {      
+        arrays_.push(item, this.state[item] )
+        add_ = add_+"WHEN ? THEN ? "        
+      })
+     
+      arrays_.push(table_id, date)
+      console.log("remove3", arrays_)
+      console.log("remove4",add_)
+      db.transaction(function(tx) {
+        tx.executeSql(
+          'UPDATE valueinfo SET column_value = CASE column_name '+add_+' ELSE column_value END WHERE table_id =? and record_date =?',
+          arrays_,
+          (tx, results) => {                            
+            if (results.rowsAffected > 0) {
+              console.log('value update : ', "success") 
+             // alert("data updated")
+              setUpdate(false)
+              setReadOnly(true)
+            } else {
+              console.log('value update : ', "failed")
+            }
+          }
+        )
+      });  
+      
+    }
+   
+    
   }
 
   // table이름 변경시에
@@ -686,7 +842,7 @@ recordFunc = (RecordDates) => {
           <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
           <TouchableOpacity 
             activeOpacity = {0.9}
-            onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
+            onPress={() => {this.props.navigation.navigate("UpdatetableScreen", {otherParam: this.state.table_id, otherParam2: this.state.table})}} // insertComment
             >      
             <Icon name={'pencil'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
             </TouchableOpacity>
@@ -720,6 +876,17 @@ recordFunc = (RecordDates) => {
           readonly={this.state.readonly}
           onChange = {(title, value) => this.setState({[title]:value}) }         
         />
+        <View  style={arrays_removed.length == 0 ? {display:'none'} : {borderTopColor:'#000', borderTopWidth:0.5, marginTop:10}}>   
+        <Text>Removed column Data</Text>        
+          <CustomListview         
+          tableName={this.state.table}
+          itemList={arrays_removed}
+          date={this.state.selectedDate}
+          readonly={this.state.readonly}
+          onChange = {(title, value) => this.setState({[title]:value}) }         
+        />
+        </View>
+
          <TouchableOpacity 
         activeOpacity = {0.9}
         style={!this.state.dataExist ? [styles.Button, {backgroundColor: '#298A08'}] : {display:'none'}}

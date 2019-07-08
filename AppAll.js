@@ -11,6 +11,7 @@ import {
 import { YellowBox } from 'react-native';
 import App from './App';
 import AddtablePage from './page/AddtablePage';
+import UpdatetablePage from './page/UpdatetablePage'
 import TodayPage from './page/TodayPage';
 import RNPickerSelect from 'react-native-picker-select';
 
@@ -28,9 +29,14 @@ const Container = createAppContainer(
       screen: AddtablePage,
       navigationOptions: {
         header: null
+      }
+    },
+    UpdatetableScreen: {
+      screen: UpdatetablePage,
+      navigationOptions: {
+        header: null
       }  
-  
-    }    
+    }
     
   })
 );

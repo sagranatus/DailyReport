@@ -9,6 +9,8 @@ import RNPickerSelect from 'react-native-picker-select';
 var db = openDatabase({ name: 'TableDatabase.db' })
 
 var array = new Array()
+var addArray = new Array()
+var removeArray = new Array()
 const select = [
   {
       label: 'check box',
@@ -41,7 +43,7 @@ const placeholder = {
   color: '#9EA0A4',
 };
 
-export default class AddtablePage extends React.Component {
+export default class UpdatetablePage extends React.Component {
 
 constructor(props) {
     super(props);
@@ -59,12 +61,93 @@ constructor(props) {
     this.animatedValue = new Animated.Value(0);
 
     this.InsertTable = this.InsertTable.bind(this);
-    this.InsertTypes = this.InsertTypes.bind(this);
+  //  this.InsertTypes = this.InsertTypes.bind(this);
     this.onSelect = this.onSelect.bind(this);
 }
 
 componentWillMount(){
+    this.getValueArray()
  
+}
+
+getValueArray(){
+    const { params } = this.props.navigation.state;
+    if(params != null){
+      console.log("navigation params existed : ",params.otherParam)     
+    // alert(params.otherParam)
+      this.setState({table_name: params.otherParam2})
+      const setState = (_var1, _var2) => this.setState({[_var1]: _var2})
+      var table_id = params.otherParam
+      this.setState({table_id: params.otherParam})
+
+      db.transaction(tx => {
+        tx.executeSql(
+        'SELECT * FROM typeinfo where table_id = ?',
+        [table_id],
+        (tx, results) => {
+          var len = results.rows.length;
+        //  값이 있는 경우에 
+          if (len > 0) {
+            const tableArray = new Array() 
+            var column_name, column_type;
+            this.index = results.rows.length
+            for(var i=0; i<results.rows.length; i++){
+            column_name = results.rows.item(i).column_name   
+            column_type = results.rows.item(i).column_type 
+            if(tableArray.indexOf(column_name) < 0 ){
+              console.log(column_name)
+              tableArray.push({
+                index: i//,
+               // column: column_name,
+               // type: column_type,
+              });              
+              let readonly = 'readonly'+i
+              let _name =  'column'+i+'_name'
+              let _type = 'column'+i+'_type'
+              let select_all = 'selectall'+i+'_val'
+              let index = 'select'+i
+              setState(readonly , true)
+              setState(_name , column_name)
+              setState(_type, column_type)
+              if(column_type == "select"){
+                tx.executeSql(
+                    'SELECT * FROM selectinfo where table_id = ? AND column_name=?',
+                    [table_id, column_name],
+                    (tx, results_) => {
+                    
+                    var len = results_.rows.length;
+                    var column, select_val
+                    //  값이 있는 경우에 
+                    if (len > 0) {                              
+                        var selects = new Array()
+                        for(var i=0; i<results_.rows.length; i++){
+                        column = results_.rows.item(i).column_name
+                        select_val = results_.rows.item(i).select_value
+                        console.log(column+select_val)
+                        selects.push(select_val)
+                        } 
+                        console.log("selects2",selects)
+                        setState(select_all, selects)         
+                        setState(index, true)  
+                    }
+                    }
+                );
+                }
+              console.log(_name + column_name)
+              console.log(_type + column_type)
+              } 
+              if(i == results.rows.length-1){   
+              }
+            }
+          //  setState(tableArray)
+              console.log(tableArray)
+              setState("valueArray", tableArray)
+            
+          }else{
+          }
+        })
+       })
+    }
 }
 
 onSelect(_type, selected, index){
@@ -78,8 +161,13 @@ onSelect(_type, selected, index){
   }
 }
 
-AddColumn = () =>
+AddColumn = (index) =>
 {  
+    console.log(index)   
+    if(addArray.indexOf(index) == -1){
+        addArray.push(index)
+    }  
+    
     this.animatedValue.setValue(0);
 
     let newlyAddedValue = { index: this.index }
@@ -103,6 +191,15 @@ AddColumn = () =>
 
 RemoveColumn = (index) =>
 {
+
+  const idx_ = addArray.indexOf(index) 
+  if (idx_ > -1){
+    addArray.splice(idx_, 1)
+  } 
+
+  let _name =  'column'+index+'_name'  
+  removeArray.push(this.state[_name])
+
   console.log("Index"+index)
   //alert(this.state.valueArray)  
   console.log(this.state.valueArray)
@@ -121,18 +218,21 @@ checkColumn(){
   console.log(this.state.valueArray)
   var array_column = new Array()
   var array_select = new Array()
+  var array_column_select = new Array()
   this.state.valueArray.map(( item, key ) =>
-      {             
-          
+      {                       
+           array_select.length == 0
            let select_val = 'select'+item.index+'_val'
            let select_all = 'selectall'+item.index+'_val'
            let _name =  'column'+item.index+'_name'
-           let _type = 'column'+item.index+'_type'       
+           let _type = 'column'+item.index+'_type'    
+           console.log("select_all", select_all)   
           console.log( this.state[_name] + this.state[_type])
           array_column.push({column:this.state[_name], type:this.state[_type]})
           if(this.state[_type] == 'select'){
-            if(this.state[select_val] !== undefined){              
-              console.log( this.state[_name] + this.state[select_val])
+            array_column_select.push(this.state[_name])
+            if(this.state[select_all] !== undefined){              
+            //  console.log( this.state[_name] + this.state[select_val])
               var arrays = new Array()
               //arrays = this.state[select_val].split(',');
               arrays = this.state[select_all]
@@ -148,7 +248,7 @@ checkColumn(){
       })
     console.log(array_column)
     console.log(array_select)
-    const itemToFind = array_column.find(function(item) {return item.column === undefined}) 
+    const itemToFind = array_column.find(function(item) {return item.column === undefined || item.column === ""}) 
     const idx = array_column.indexOf(itemToFind) 
 
     const itemToFind2 = array_column.find(function(item) {return item.type === undefined}) 
@@ -192,42 +292,120 @@ checkColumn(){
 
     if(idx2 == -1 && idx2 == -1 && idx3 == -1 && this.state.table_name !== undefined && array_column.length !== 0){
       alert("table made successfully")
-      this.InsertTable(this.state.table_name, array_column, array_select)
+      this.UpdateType(this.state.table_id, array_column, array_select,  array_column_select)
+     // this.UpdateTableName()
+     // this.UpdateSelects()
+
+    //  this.InsertTable(this.state.table_name, array_column, array_select)
     }
 
 }
 
-InsertTypes(table_id, array_column, array_select){
-  const navi = (_var) => this.props.navigation.navigate("TodayScreen", {otherParam: _var})
+UpdateType(table_id, array_column, array_select, array_column_select){
+console.log("remove!!!!!!!!!!!", removeArray)
+console.log("add", addArray)
+
+//컬럼삭제
+if(removeArray.length !== 0){
+    removeArray.map(( item, key ) =>
+    {      
+        db.transaction(function(tx) {
+            tx.executeSql(
+                'DELETE FROM typeinfo where table_id = ? AND column_name = ?',
+                [table_id, item ],
+                (tx, results) => {                          
+                          if (results.rowsAffected > 0) {
+                            console.log('column delete : ', "success") 
+                          } else {
+                            console.log('column delete : ', "failed")
+                          }               
+                }
+              )
+           
+          });  
+    })
+   
+}
+
+
+//컬럼추가
+
+
+const navi = (_var) => this.props.navigation.navigate("TodayScreen", {otherParam: _var})
+
+if(addArray.length !== 0){
+    var arrays_ = new Array()
+    var add_ = ''
+    addArray.map(( item ) =>
+    {
+    arrays_.push(table_id,this.state['column'+item+'_name'], this.state['column'+item+'_type'])
+    add_ = add_+"(?,?,?),"  
+    })
+    add_ = add_.substr(0, add_.length -1);
+    console.log("add1",arrays_)
+    console.log("add2",add_)
+    db.transaction(function(tx) {
+        tx.executeSql(
+        'INSERT INTO typeinfo (table_id, column_name, column_type) VALUES '+add_,
+        arrays_,
+        (tx, results) => {                            
+            if (results.rowsAffected > 0) {
+            console.log('type insert : ', "success") 
+            } else {
+            console.log('type insert : ', "failed")
+            }
+        }
+        )
+    }); 
+}
+ 
+
   console.log("here", array_column)
   var arrays = new Array()
-  var add = ''
+  var add = ""
   array_column.map(( item ) =>
-      {
-        arrays.push(table_id, item.column, item.type )
-        add = add+"(?,?,?),"  
-      }  
-  )
-
-  add = add.substr(0, add.length -1);
+  {
+    arrays.push(item.column, item.type )
+    add = add+"WHEN ? THEN ? "  
+  }  
+ )
+  arrays.push(table_id)
   console.log(arrays)
   console.log(add)
   db.transaction(function(tx) {
     tx.executeSql(
-      'INSERT INTO typeinfo (table_id, column_name, column_type) VALUES '+add,
+      'UPDATE typeinfo SET column_type = CASE column_name '+add+' ELSE column_type END where table_id=?',
       arrays,
       (tx, results) => {                            
         if (results.rowsAffected > 0) {
-          console.log('type insert : ', "success") 
+          console.log('type update : ', "success") 
           navi("saea")
         } else {
-          console.log('type insert : ', "failed")
+          console.log('type update : ', "failed")
         }
       }
     )
   });  
      
+  console.log("refresh selects", array_column_select )
+  
+  array_column_select.map(( item, key ) =>{
+  db.transaction(function(tx) {  
+    tx.executeSql(
+        'DELETE FROM selectinfo where table_id = ? AND column_name = ?',
+        [table_id, item ],
+        (tx, results) => { 
+            if (results.rowsAffected > 0) {
+                console.log('delete insert : ', "success") 
+              } else {
+                console.log('delete insert : ', "failed")
+              }
+        }
+      )   
+  });  
+})
 
+console.log("array_select", array_select)
   var arrays_select = new Array()
   var add_select = ''
   if(array_select.length !== 0){
@@ -243,20 +421,20 @@ InsertTypes(table_id, array_column, array_select){
   console.log(add_select)
 
   db.transaction(function(tx) {
-    tx.executeSql(
-      'INSERT INTO selectinfo (table_id, column_name, select_value) VALUES '+add_select,
-      arrays_select,
-      (tx, results) => {                            
-        if (results.rowsAffected > 0) {
-          console.log('select insert : ', "success") 
-        } else {
-          console.log('select insert : ', "failed")
-        }
+  tx.executeSql(
+    'INSERT INTO selectinfo (table_id, column_name, select_value) VALUES '+add_select,
+    arrays_select,
+    (tx, results) => {                            
+      if (results.rowsAffected > 0) {
+        console.log('select insert : ', "success") 
+      } else {
+        console.log('select insert : ', "failed")
       }
-    );
-  });  
-}
+    }
+  ); 
+});  
 
+}
 }
 
 InsertTable(table_name, array_column, array_select){
@@ -314,6 +492,7 @@ InsertTable(table_name, array_column, array_select){
 
 
   render() {
+      console.log("valueArray", this.state.valueArray)
     const animationValue = this.animatedValue.interpolate(
       {
           inputRange: [ 0, 1 ],
@@ -325,6 +504,7 @@ InsertTable(table_name, array_column, array_select){
           if(( key ) == this.index)
           { 
             let inx = item.index
+            let readonly = 'readonly'+item.index
             let index = 'select'+item.index
             let select_all = 'selectall'+item.index+'_val'
             let select_val = 'select'+item.index+'_val'
@@ -340,7 +520,7 @@ InsertTable(table_name, array_column, array_select){
               
               return(
                   <Animated.View key = { key } style = {[ styles.viewHolder, { opacity: this.animatedValue, transform: [{ translateY: animationValue }] }]}>           
-                    <View key = { key } style = { styles.viewHolder }>                   
+                     <View key = { key } style = { styles.viewHolder }>                   
                       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
                         <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
                           <TextInput                
@@ -410,6 +590,7 @@ InsertTable(table_name, array_column, array_select){
           else
           {
               let inx = item.index
+              let readonly = 'readonly'+item.index
               let index = 'select'+item.index
               let select_all = 'selectall'+item.index+'_val'
               let select_val = 'select'+item.index+'_val'
@@ -426,7 +607,7 @@ InsertTable(table_name, array_column, array_select){
               return(
                   <View key = { key } style = { styles.viewHolder }>                   
                       <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
-                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
+                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
                           <TextInput                
                           placeholder={"column name"}      
                           value={this.state[_name]}
@@ -493,7 +674,7 @@ InsertTable(table_name, array_column, array_select){
       });
       
 
-   // array = newArray
+    array = newArray
 
     return (
       <View style={{ flex: 1}}>
@@ -525,7 +706,7 @@ InsertTable(table_name, array_column, array_select){
         </ScrollView>
         <TouchableOpacity 
         activeOpacity = {0.9}
-        onPress={()=> this.AddColumn()} 
+        onPress={()=> this.AddColumn(this.index)} 
         >
           <Icon name={'plus'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'center', paddingRight:10}} />
         </TouchableOpacity>
