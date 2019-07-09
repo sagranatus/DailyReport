@@ -509,7 +509,7 @@ recordFunc = (RecordDates) => {
 
   }
 
-  UpdateValueToTable(table_id,date,array_column){
+  UpdateValueToTable(table_id,date,array_column){    
     const setReadOnly = (_var) => this.setState({readonly: _var})
     const setUpdate = (_var) => this.setState({showUpdate: _var})
     var arrays = new Array()
@@ -824,7 +824,7 @@ recordFunc = (RecordDates) => {
               placeholder={placeholder}
               items={this.state.tableArray}
               onValueChange={(value) => {
-                this.Go(value)
+                value == null ? {} : this.Go(value)
               }}/*
               onUpArrow={() => {
                   this.inputRefs.firstTextInput.focus();
@@ -839,7 +839,7 @@ recordFunc = (RecordDates) => {
             // }}
           />    
           </View>
-          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
+          <View style={this.state.table == null ? {display:'none'} : {flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
           <TouchableOpacity 
             activeOpacity = {0.9}
             onPress={() => {this.props.navigation.navigate("UpdatetableScreen", {otherParam: this.state.table_id, otherParam2: this.state.table})}} // insertComment
@@ -847,7 +847,7 @@ recordFunc = (RecordDates) => {
             <Icon name={'pencil'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
             </TouchableOpacity>
           </View>
-          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
+          <View style={this.state.table == null ? {display:'none'} : {flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
           <TouchableOpacity 
             activeOpacity = {0.9}
             onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
@@ -899,17 +899,22 @@ recordFunc = (RecordDates) => {
 
         <TouchableOpacity 
         activeOpacity = {0.9}        
-        style={this.state.dataExist ? styles.Button : {display:'none'}}
+        style={this.state.dataExist && !this.state.showUpdate ? styles.Button : {display:'none'}}
         onPress={()=> [this.setState({readonly: false, showUpdate: true}),  this.getValuesForUpdate(this.state.table_id, this.state.selectedDate)]} 
-        >
+        >         
           <Text style={!this.state.showUpdate ? {color:"#fff", textAlign:'center'} : {display:'none'}}>
           edit values
           </Text>
-          <Text style={this.state.showUpdate ? {color:"#fff", textAlign:'center'} : {display:'none'}}>
+          </TouchableOpacity>
+          <TouchableOpacity 
+          activeOpacity = {0.9}        
+          style={this.state.dataExist ? [styles.Button, {backgroundColor:'#fff'}] : {display:'none'}}
+          onPress={()=> [this.setState({readonly: false, showUpdate: true}),  this.getValuesForUpdate(this.state.table_id, this.state.selectedDate)]} 
+          >   
+          <Text style={this.state.showUpdate ? {color:"#01579b", textAlign:'center'} : {display:'none'}}>
           editing...
           </Text>
-        </TouchableOpacity>
-
+          </TouchableOpacity>
 
         <TouchableOpacity 
         activeOpacity = {0.9}        

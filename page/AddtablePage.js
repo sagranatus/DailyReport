@@ -465,26 +465,39 @@ InsertTable(table_name, array_column, array_select){
                           </TouchableOpacity>
                         </View>
                         <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10} : {display:'none'}}>
-                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
+                        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
                         <TextInput                
                           placeholder={'add items'}       
+                          returnKeyType = {'done'}
+                          returnKeyLabel ={"send"}
+                          onSubmitEditing={()=> (this.state[select_val] !== "" && this.state[select_all].indexOf(this.state[select_val]) == -1) ? [setSelect(""), this.state[select_all].push(this.state[select_val])] : {}}
                           value={this.state[select_val]}
                           onChangeText={_value =>setSelect(_value)} 
-                          underlineColorAndroid='transparent' 
+                         // underlineColorAndroid='transparent' 
                           style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
                           />
                           </View>
-                          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}>
-                            <TouchableOpacity 
+                          <View style={{flexDirection: "column", flexWrap: 'wrap', width: '60%' }}>
+                          <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
+
+                          { this.state[select_all] !== undefined ? this.state[select_all].map((item, key)=>(
+                          <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
+                          <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
+                          <Text key={key} > { item }</Text>
+                          </View>
+                           <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
+                          <TouchableOpacity 
                           activeOpacity = {0.9}
-                          onPress={()=> (this.state[select_val] !== "" && this.state[select_all].indexOf(this.state[select_val]) == -1) ? [setSelect(""), this.state[select_all].push(this.state[select_val])] : {}} 
+                          onPress={()=> [setSelect(""), this.state[select_all].splice(this.state[select_all].indexOf(item),1)]} 
                           >
-                           <Icon name={'plus'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'left', paddingRight:10}} />
+                          <Icon name={'close'} size={20} color={"#000"} style={{paddingTop:2, textAlign:'left', paddingRight:10}} />
                           </TouchableOpacity>
                           </View>
-                          { this.state[select_all] !== undefined ? this.state[select_all].map((item, key)=>(
-                          <Text key={key} > { item } </Text>)
+                          </View>
+                          )
                           ) : setAll([])}
+                          </View>
+                          </View>
                           </View>                         
                       </View>
                   </View>
