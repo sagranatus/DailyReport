@@ -33,9 +33,9 @@ export default class TodayPage extends React.Component {
           "SELECT name FROM sqlite_master WHERE type='table' AND name='tableinfo'",
           [],
           function(tx, res) {
-           // txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
+          //  txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
            // txn.executeSql('DROP TABLE IF EXISTS typeinfo', []);
-           // txn.executeSql('DROP TABLE IF EXISTS selectinfo', []);
+          //  txn.executeSql('DROP TABLE IF EXISTS selectinfo', []);
 
             if (res.rows.length == 0) {
               
@@ -46,7 +46,7 @@ export default class TodayPage extends React.Component {
                 []
               );
               txn.executeSql(
-                'CREATE TABLE IF NOT EXISTS typeinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, column_name TEXT NULL, column_type TEXT NULL)',
+                'CREATE TABLE IF NOT EXISTS typeinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, column_name TEXT NULL, column_type TEXT NULL, column_order INTEGER NOT NULL)',
                 []
               );
               txn.executeSql(
@@ -152,6 +152,7 @@ export default class TodayPage extends React.Component {
     console.log("thisMonth",this.state.thisMonth)
     const setColumn = (column) => this.setState({column: column})
     const getValue = (table_id) => this.getValues(table_id, this.state.selectedDate);
+    const getSelects = (table_id, columns) => this.getSelects(table_id, columns)
     const setState = (_var) => this.setState({table_id: _var})
     const getAllPoints = (table_id) => this.getAllPoints(table_id, this.state.thisMonth);
     db.transaction(tx => {
@@ -166,7 +167,7 @@ export default class TodayPage extends React.Component {
               var table_id = results.rows.item(0).table_id
               setState(table_id)
               tx.executeSql(
-                'SELECT * FROM typeinfo where table_id = ?',
+                'SELECT * FROM typeinfo where table_id = ? ORDER BY ABS(column_order)',
                 [table_id],
                 (tx, results) => {                  
                   arrays.length = 0
@@ -178,32 +179,9 @@ export default class TodayPage extends React.Component {
                     for(var i=0; i<results.rows.length; i++){
                       column = results.rows.item(i).column_name
                       type = results.rows.item(i).column_type
-                      console.log(column+type)
+                      console.log("show Order",column+type)
                       if(type == "select"){
-                        tx.executeSql(
-                          'SELECT * FROM selectinfo where table_id = ? AND column_name=?',
-                          [table_id, column],
-                          (tx, results) => {
-                            
-                            var len = results.rows.length;
-                            var column, select_val
-                          //  값이 있는 경우에 
-                            if (len > 0) {                              
-                              var selects = new Array()
-                              for(var i=0; i<results.rows.length; i++){
-                                column = results.rows.item(i).column_name
-                                select_val = results.rows.item(i).select_value
-                                console.log(column+select_val)
-                                selects.push({
-                                     label: select_val,
-                                     value: select_val
-                                 })
-                              } 
-                              console.log("selects2",selects)
-                              arrays.push({key: table_id+column, title:column, type: "select", select:selects})          
-                            }
-                          }
-                        );
+                        arrays.push({key: table_id+column, title:column, type: "select", select:[]})                         
                       }else if(type == "check box"){                        
                        arrays.push({key: table_id+column, title:column, type: type})                       
                       }else{                        
@@ -214,7 +192,8 @@ export default class TodayPage extends React.Component {
                     } 
                     console.log("columns", columns)
                     console.log("info!!", arrays)
-                    setColumn(columns)            
+                    setColumn(columns)  
+                    getSelects(table_id, columns)          
                     getValue(table_id)   
                     getAllPoints(table_id)
                   }
@@ -229,6 +208,47 @@ export default class TodayPage extends React.Component {
     });
   }
 
+  getSelects(table_id, columns){
+    
+    columns.map(( item, key ) =>
+    {      
+    if(item.type == "select"){   
+    db.transaction(tx => {
+      db.transaction(function(tx) { 
+      tx.executeSql(
+        'SELECT * FROM selectinfo where table_id = ? AND column_name=?',
+        [table_id, item.column],
+        (tx, results) => {
+          
+          var len = results.rows.length;
+          var column, select_val
+        //  값이 있는 경우에 
+          if (len > 0) {                              
+            var selects = new Array()
+            for(var i=0; i<results.rows.length; i++){
+              column = results.rows.item(i).column_name
+              select_val = results.rows.item(i).select_value
+              console.log(column+select_val)
+              selects.push({
+                  label: select_val,
+                  value: select_val
+              })
+            } 
+            console.log("selects2",selects)
+            const itemToFind = arrays.find(function(item) {return item.title === column}) 
+               const idx = arrays.indexOf(itemToFind)           
+               if(idx > -1){
+                arrays[idx]["select"] = selects
+                console.log(arrays)
+               }  
+          }
+        }
+      );
+      });
+    })
+  }
+  })
+}
   getValues(table_id, date){ 
     //일단 제거한 뒤에 삽입할 것.
    for(var j=0; j<arrays.length; j++){
