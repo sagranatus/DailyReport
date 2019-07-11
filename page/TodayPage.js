@@ -33,9 +33,10 @@ export default class TodayPage extends React.Component {
           "SELECT name FROM sqlite_master WHERE type='table' AND name='tableinfo'",
           [],
           function(tx, res) {
-          //  txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
-           // txn.executeSql('DROP TABLE IF EXISTS typeinfo', []);
-          //  txn.executeSql('DROP TABLE IF EXISTS selectinfo', []);
+            //txn.executeSql('DROP TABLE IF EXISTS tableinfo', []);
+            //txn.executeSql('DROP TABLE IF EXISTS typeinfo', []);
+            //txn.executeSql('DROP TABLE IF EXISTS selectinfo', []);
+            //txn.executeSql('DROP TABLE IF EXISTS valueinfo', []);
 
             if (res.rows.length == 0) {
               
@@ -50,7 +51,7 @@ export default class TodayPage extends React.Component {
                 []
               );
               txn.executeSql(
-                'CREATE TABLE IF NOT EXISTS valueinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, record_date TEXT NULL, column_name TEXT NULL, column_value TEXT NULL)',
+                'CREATE TABLE IF NOT EXISTS valueinfo(reg_id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER NOT NULL, record_date TIMESTAMP NULL, column_name TEXT NULL, column_value TEXT NULL)',
                 []
               );
               txn.executeSql(
@@ -870,7 +871,7 @@ recordFunc = (RecordDates) => {
           <View style={this.state.table == null ? {display:'none'} : {flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
           <TouchableOpacity 
             activeOpacity = {0.9}
-            onPress={() => {this.props.navigation.navigate("AddtableScreen")}} // insertComment
+            onPress={() => {this.props.navigation.navigate("StatisticsScreen", {otherParam: this.state.table_id})}} // insertComment
             >      
             <Icon name={'chart'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
             </TouchableOpacity>

@@ -13,6 +13,7 @@ import App from './App';
 import AddtablePage from './page/AddtablePage';
 import UpdatetablePage from './page/UpdatetablePage'
 import TodayPage from './page/TodayPage';
+import StatisticsPage from './page/StatisticsPage'
 import RNPickerSelect from 'react-native-picker-select';
 
 YellowBox.ignoreWarnings(['ViewPagerAndroid']);
@@ -33,6 +34,12 @@ const Container = createAppContainer(
     },
     UpdatetableScreen: {
       screen: UpdatetablePage,
+      navigationOptions: {
+        header: null
+      }  
+    },
+    StatisticsScreen: {
+      screen: StatisticsPage,
       navigationOptions: {
         header: null
       }  

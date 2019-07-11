@@ -621,14 +621,19 @@ tx.executeSql(
           key = { key } style = {styles.viewHolder} 
         style={{ 
           height: 100, 
-          backgroundColor: isActive ? 'blue' : item.ackgroundColor,
+          borderColor:isActive ? 'blue' : "#000",
+          borderBottomWidth:isActive ?  1 : 0.25,
+          borderTopWidth:isActive ?  1 : 0.25,
+          borderLeftWidth:isActive ?  2 : 0,
+          borderRightWidth:isActive ?  2 : 0,
+         // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
           alignItems: 'center', 
           justifyContent: 'center' 
         }}
         onLongPress={move}
         onPressOut={moveEnd}
       >              
-              <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
+              <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}  pointerEvents={isActive ? 'none' : null}>             
                 <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
                   <TextInput                
                   placeholder={"column name"}      
@@ -667,7 +672,7 @@ tx.executeSql(
 
                   </TouchableOpacity>
                 </View>
-                <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10} : {display:'none'}}>
+                <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 0} : {display:'none'}}>
                 <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
                 <TextInput                
                   placeholder={'add items'}       
@@ -948,6 +953,7 @@ tx.executeSql(
               renderItem={renderItem}
               keyExtractor={(item, index) => `draggable-item-${item.key}`}
               scrollPercent={5}
+              onMoveBegin={(index) => index.active}
               onMoveEnd={({ data }) => this.setState({ data })}
             />
             </View>

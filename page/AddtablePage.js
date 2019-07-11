@@ -497,16 +497,21 @@ InsertTable(table_name, array_column, array_select){
         return(     
           <TouchableOpacity
             key = { key } style = {styles.viewHolder} 
-          style={{ 
-            height: 100, 
-            backgroundColor: isActive ? 'blue' : item.ackgroundColor,
-            alignItems: 'center', 
-            justifyContent: 'center' 
-          }}
-          onLongPress={move}
-          onPressOut={moveEnd}
+            style={{ 
+              height: 100, 
+              borderColor:isActive ? 'blue' : "#000",
+              borderBottomWidth:isActive ?  1 : 0.25,
+              borderTopWidth:isActive ?  1 : 0.25,
+              borderLeftWidth:isActive ?  2 : 0,
+              borderRightWidth:isActive ?  2 : 0,
+             // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}
+            onLongPress={move}
+            onPressOut={moveEnd}
         >              
-                <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
+                <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}  pointerEvents={isActive ? 'none' : null}>
                   <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
                     <TextInput                
                     placeholder={"column name"}      
@@ -545,7 +550,7 @@ InsertTable(table_name, array_column, array_select){
   
                     </TouchableOpacity>
                   </View>
-                  <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10} : {display:'none'}}>
+                  <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 0} : {display:'none'}}>
                   <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
                   <TextInput                
                     placeholder={'add items'}       
