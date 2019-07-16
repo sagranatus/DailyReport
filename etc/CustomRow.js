@@ -62,10 +62,6 @@ const styles = StyleSheet.create({
     color: '#9EA0A4',
   };
 
-  var radio_props = [
-    {label: 'Good', value: 0 },
-    {label: 'Bad', value: 1 }
-  ];
 export default class CustomRow extends React.Component {
     constructor(props) {
         super(props);
@@ -175,86 +171,7 @@ export default class CustomRow extends React.Component {
                 />
               </View>
             </View>
-            );
-        case 'good/bad':
-            return (
-                <View style={styles.container}>
-                <View style={styles.container_text}>
-                    <Text style={styles.title}>
-                        {title}
-                    </Text>
-                </View>
-                <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
-                  
-                    <RadioForm
-                    style={{marginTop:8}}
-                    buttonColor={readonly ? '#01579b' : '#298A08'}
-                    //  labelColor={'#50C900'}
-                    selectedButtonColor={readonly ? '#01579b' : '#298A08'}
-                    buttonSize={10}
-                    buttonOuterSize={20}
-                    formHorizontal={true}
-                    animation={true}
-                    >
-                     <RadioButton labelHorizontal={true} key={0} >
-                        <RadioButtonInput
-                            index={0}
-                            obj = {{label: 'Good', value: 'good' }}
-                            isSelected={this.state[title+date] == undefined ? val === 'good' : this.state[title+date] === 'good'}
-                            onPress={() => {
-                                [this.props.onChange(title, 'good'), this.setState({[title+date] : 'good'})]
-                            }}  
-                            borderWidth={3}
-                            buttonInnerColor={readonly ? '#01579b' : '#298A08'}
-                            buttonOuterColor={readonly ? '#01579b' : '#298A08'}
-                            buttonSize={10}
-                            buttonOuterSize={20}
-                            buttonStyle={{}}
-                            buttonWrapStyle={{marginLeft: 10}}
-                        />
-                        <RadioButtonLabel
-                            index={0}
-                            obj = {{label: 'Good', value: 'good' }}
-                            labelHorizontal={true}
-                            onPress={() => {
-                            [this.props.onChange(title, 'good'), this.setState({[title] : 'good'})]
-                          }}  
-                            labelStyle={{color: readonly ? '#01579b' : '#298A08'}}
-                            labelWrapStyle={{}}
-                        />
-                        </RadioButton>
-                        <RadioButton labelHorizontal={true} key={1} >
-                        <RadioButtonInput
-                            index={1}
-                            obj = {{label: 'Bad', value: 'bad' }}
-                            isSelected={this.state[title+date] == undefined ? val === 'bad' : this.state[title+date] === 'bad'}
-                            onPress={() => {
-                                [this.props.onChange(title, 'bad'), this.setState({[title+date] : 'bad'})]
-                            }}  
-                            borderWidth={3}
-                            buttonInnerColor={readonly ? '#01579b' : '#298A08'}
-                            buttonOuterColor={readonly ? '#01579b' : '#298A08'}
-                            buttonSize={10}
-                            buttonOuterSize={20}
-                            buttonStyle={{}}
-                            buttonWrapStyle={{marginLeft: 10}}
-                        />
-                        <RadioButtonLabel
-                            index={1}
-                            obj = {{label: 'Bad', value: 'bad' }}
-                            labelHorizontal={true}
-                            onPress={() => {
-                            [this.props.onChange(title, 'bad'), this.setState({[title+date] : 'bad'})]
-                          }}                            
-                            labelStyle={{color: readonly ? '#01579b' : '#298A08'}}
-                           // labelStyle={{fontSize: 20, color: '#2ecc71'}}
-                            labelWrapStyle={{}}
-                        />
-                        </RadioButton>
-                    </RadioForm>
-                </View>
-                </View>
-                );
+            );       
         case 'check box':
             return (
                 <View style={styles.container}>

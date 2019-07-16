@@ -29,10 +29,6 @@ const select = [
   value: 'select'
 },
 {
-  label: 'good/bad',
-  value: 'good/bad'
-},
-{
   label: 'number',
   value: 'number'
 },
@@ -358,7 +354,7 @@ InsertTypes(table_id, array_column, array_select){
 
   render() {
     
-  const renderItem =  ({ item, index, move, moveEnd, isActive }) => {
+  const renderItem =  ({ item, move, moveEnd, isActive }) => {
    // console.log("item - renderItem", item )
    // console.log("label - renderItem", item.label)
     const key = item.label

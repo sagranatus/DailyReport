@@ -51,8 +51,6 @@ componentWillMount(){
               if(column_type === "select"){
                   tableArray.push({column: column_name, type: column_type, info: new Array(), select:[]})                
                   getSelects(params.otherParam, tableArray, column_name)      
-              }else if(column_type === "good/bad"){
-                  tableArray.push({column: column_name, type: column_type, info: new Array(), goodCount:0, badCount:0})
               }else if(column_type === "check box"){
                 tableArray.push({column: column_name, type: column_type, info: new Array(), checkCount:0, uncheckCount:0})
               }else{
@@ -160,10 +158,7 @@ getValues(table_id, startdate, enddate){
   // 우선 값 모두 비우기
   for(var j=0; j<tableArray.length; j++){
       tableArray[j]["info"] = []
-   if( tableArray[j].type == "good/bad"){
-      tableArray[j]["goodCount"] = 0
-      tableArray[j]["badCount"] = 0
-    }else if(tableArray[j].type == "check box"){
+   if(tableArray[j].type == "check box"){
       tableArray[j]["checkCount"] = 0
       tableArray[j]["uncheckCount"] = 0
     }else if( tableArray[j].type == "select"){
@@ -298,31 +293,7 @@ getStatistics(tableArray){
               console.log("select data - getStatistics", data)
           }
           
-      }else if(item.type == "good/bad"){
-        console.log("good/bad - getStatistics", item.column +"|"+ item.info)
-        // info값을 하나씩 빼서 value가 해당하는 것에 count 증가
-        item.info.map(( item_, key ) =>
-        { 
-           // console.log(item_.value) 
-            if(item_.value == "good"){
-              item.goodCount = item.goodCount + 1
-            }else if(item_.value == "bad"){
-              item.badCount = item.badCount + 1
-            }         
-                           
-        })
-      //  console.log("result", item.goodCount)
-        if(item.goodCount + item.badCount  > 1){
-          var data = {
-              labels: [item.column],
-              legend: ["good", "bad"],
-              data: [[item.goodCount, item.badCount]],
-              barColors: ['#dfe4ea', '#ced6e0'],
-            }
-            chartArray.push(data)
-            console.log("good/bad data - getStatistics", data)
-        }
-    }else if(item.type == "check box"){
+      }else if(item.type == "check box"){
       console.log("check box - getStatistics", item.column +"|"+ item.info)  
       //info 값 하나씩 빼서 해당값에 count 증가
       item.info.map(( item_, key ) =>

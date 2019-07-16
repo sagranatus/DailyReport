@@ -1,11 +1,12 @@
 // Home screen
 import React, { Component } from 'react';
 //import react in our code.
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Button,KeyboardAvoidingView,Animated, ScrollView,Keyboard } from 'react-native';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Button,KeyboardAvoidingView,Animated, ScrollView,Keyboard, Dimensions } from 'react-native';
 import { openDatabase } from 'react-native-sqlite-storage'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import Icon from 'react-native-vector-icons/EvilIcons';
 import RNPickerSelect from 'react-native-picker-select';
+import SortableList from 'react-native-sortable-list';
 import DraggableFlatList from 'react-native-draggable-flatlist'
 var db = openDatabase({ name: 'TableDatabase.db' })
 
@@ -34,6 +35,8 @@ const select = [
   value: 'number'
 },
 ];
+
+const window = Dimensions.get('window');
 const placeholder = {
   label: 'Select Types',
   value: null,
@@ -44,10 +47,23 @@ export default class UpdatetablePage extends React.Component {
 
 constructor(props) {
     super(props);
-    this.state={ table: undefined,
-                 table_name: undefined
-                }
-    this.state = { valueArray: [], disabled: false }
+  
+    this.state = { table: undefined,
+      table_name: undefined,
+      valueArray: [], 
+      disabled: false,  
+      data: {
+      0: {
+        index:0
+      },
+      1: {
+        index:1
+      },
+      2: {
+        index:2
+      }
+    }
+   }
 
     this.index = 0;
 
@@ -131,13 +147,14 @@ getValueArray(){
             }
               console.log("tableArray - getValueArray", tableArray)
               setState("valueArray", tableArray)
-              let data = tableArray.map((d, index) => ({
-                key: `item-${index}`,
-                label: index,
-                backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index * 5}, ${132})`,
-              }))
-              setState("data",  data)
-              console.log("data - getValueArray",data)
+              var data = {}
+           //   tableArray.map((d, index) =>{ obj.index = index})
+             // setState("data",  {0:{index:1}, 1:{index:2}, 2:{index:3}})
+             tableArray.map((d, index) => (
+             data[index] = {index:index}
+           ))
+            setState("data",  data)             
+            console.log("data - getValueArray",data) 
           }else{
           }
         })
@@ -165,19 +182,16 @@ AddColumn = (index) =>
         addArray.push(index)
     }  
     
-    this.animatedValue.setValue(0);
+  //  this.animatedValue.setValue(0);
 
     let newlyAddedValue = { index: this.index }
     var tableArray = [ ...this.state.valueArray, newlyAddedValue ]
     var data = this.state.data
-     data.push({
-      key: `item-${this.index}`,
-      label:this.index,
-      backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index * 5}, ${132})`,
-    })
+     data[index] = {index:index}
     console.log("valueArray - AddColumn", tableArray)   
     console.log("data - AddColumn", data)   
     // valueArray, data 추가후에 setState
+    this.setState({ valueArray: tableArray, data: data })
     this.setState({ disabled: true, valueArray: tableArray, data: data }, () =>
     {
         Animated.timing(
@@ -204,7 +218,7 @@ RemoveColumn = (index) =>
   
   var array = new Array()
   array = this.state.data   
-
+/*
   const itemToFind = array.find(function(item) {return item.label === index}) 
   const idx = array.indexOf(itemToFind) 
   if (idx > -1) {
@@ -216,7 +230,10 @@ RemoveColumn = (index) =>
     
     console.log("RemoveColumn - ", idx +"|"+ array.length)
   }
+ 
   console.log("data - RemoveColumn", array)
+   */
+  delete array[index]
   var array_ = new Array()
   array_ = this.state.valueArray
   console.log(array_)
@@ -467,31 +484,20 @@ tx.executeSql(
 
 }
 
-
-  render() {
-
-const renderItem =  ({ item, move, moveEnd, isActive }) => {
-  // console.log("item - renderItem", item )
-  // console.log("label - renderItem", item.label)
-    const key = item.label
-    if(( item.label ) == this.index)
-    { 
-      console.log("get data - renderItem // add ")
+_renderRow = ({data, active}) => {
   
-    const animationValue = this.animatedValue.interpolate(
-      {
-          inputRange: [ 0, 1 ],
-          outputRange: [ -59, 0 ]
-      });
-
-    let inx = item.label
-    let readonly = 'readonly'+item.label
-    let index = 'select'+item.label
-    let select_all = 'selectall'+item.label+'_val'
-    let select_val = 'select'+item.label+'_val'
-    let _name =  'column'+item.label+'_name'
-    let _type = 'column'+item.label+'_type'
-   // console.log(index + _name + _type)
+  console.log("Data!!!", data)
+// console.log("item - renderItem", item )
+// console.log("label - renderItem", item.label)
+  const key =data.index
+  console.log("get data - renderItem")
+  let inx = data.index
+  let readonly = 'readonly'+data.index
+  let index = 'select'+data.index
+  let select_all = 'selectall'+data.index+'_val'
+  let select_val = 'select'+data.index+'_val'
+  let _name =  'column'+data.index+'_name'
+  let _type = 'column'+data.index+'_type'
     const setName = (_var) => this.setState({[_name]:_var})
     const setType= (_var) => this.setState({[_type]:_var})
     const setSelect= (_var) => this.setState({[select_val]:_var})
@@ -499,214 +505,91 @@ const renderItem =  ({ item, move, moveEnd, isActive }) => {
     const Reload = (_var) => this.setState({reload:_var})
     const setAll = (_var) => this.setState({[select_all] : _var})
     const RemoveColumn = (_var) => this.RemoveColumn(_var)
-      
-      return(
-          <Animated.View key = { key } style = {[ styles.viewHolder, { opacity: this.animatedValue, transform: [{ translateY: animationValue }] }]}>           
-              <TouchableOpacity
-          key = { key } style = {styles.viewHolder} 
-        style={{ 
-          height: 100, 
-          backgroundColor: isActive ? 'blue' : item.ackgroundColor,
-          alignItems: 'center', 
-          justifyContent: 'center' 
-        }}
-      >              
-              <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
-                  <TextInput                
-                  placeholder={"column name"}      
-                  value={this.state[_name]}
-                  onChangeText={_name => setName(_name)}    
-                  underlineColorAndroid='transparent' 
-                  style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
-                  />
-                </View>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
-                  <RNPickerSelect
-                      placeholder={placeholder}
-                      items={select}
-                      onValueChange={(value) => {
-                        this.onSelect(_type, value, item.label)
-                      }}/*
-                      onUpArrow={() => {
-                          this.inputRefs.firstTextInput.focus();r
-                      }}
-                      onDownArrow={() => {
-                          this.inputRefs.favSport1.togglePicker();
-                      }} */
-                      style={pickerSelectStyles}
-                      value={this.state[_type]}
-                    //  ref={(el) => {
-                      //   this.inputRefs.favSport0 = el;
-                    // }}
-                  />   
-                </View>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
-                <TouchableOpacity 
-                  activeOpacity = {0.9}
-                  onPress={()=> RemoveColumn(item.label)} 
-                  >
-                   <Icon name={'close-o'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
-
-                  </TouchableOpacity>
-                </View>
-                <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10} : {display:'none'}}>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
+    console.log(inx + index + this.state[_name] + this.state[_type]  + this.state[select_all])
+    return(     
+   
+          <Animated.View
+          active={active}
+          key={data.index}
+          style={this.state[_type] == "select" ? {flex:1, height:90} : {flex:1, height:70}}
+          >              
+            <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}} >             
+              <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}}  pointerEvents={this.state[readonly] ? 'none' : null}>
                 <TextInput                
-                  placeholder={'add items'}       
-                  returnKeyType = {'done'}
-                  returnKeyLabel ={"send"}
-                  onSubmitEditing={()=> (this.state[select_val] !== "" && this.state[select_all].indexOf(this.state[select_val]) == -1) ? [setSelect(""), this.state[select_all].push(this.state[select_val])] : {}}
-                  value={this.state[select_val]}
-                  onChangeText={_value =>setSelect(_value)} 
-                 // underlineColorAndroid='transparent' 
-                  style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
-                  />
-                  </View>
-                  <View style={{flexDirection: "column", flexWrap: 'wrap', width: '60%' }}>
-                  <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
-
-                  { this.state[select_all] !== undefined ? this.state[select_all].map((item, key)=>(
-                  <View key={ item } style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
-                  <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
-                  <Text> { item }</Text>
-                  </View>
-                   <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
-                  <TouchableOpacity 
-                  activeOpacity = {0.9}
-                  onPress={()=> [setSelect(""), this.state[select_all].splice(this.state[select_all].indexOf(item),1)]} 
-                  >
-                  <Icon name={'close'} size={20} color={"#000"} style={{paddingTop:2, textAlign:'left', paddingRight:10}} />
-                  </TouchableOpacity>
-                  </View>
-                  </View>
-                  )
-                  ) : setAll([])}
-                  </View>
-                  </View>
-               
-                  </View>                         
+                placeholder={"column name"}      
+                value={this.state[_name]}
+                onChangeText={_name => setName(_name)}    
+                underlineColorAndroid='transparent' 
+                style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
+                />
               </View>
-            </TouchableOpacity>
-          </Animated.View>
-      );
-  }
-  else
-  {
-    console.log("get data - renderItem")
-    let inx = item.label
-    let readonly = 'readonly'+item.label
-    let index = 'select'+item.label
-    let select_all = 'selectall'+item.label+'_val'
-    let select_val = 'select'+item.label+'_val'
-    let _name =  'column'+item.label+'_name'
-    let _type = 'column'+item.label+'_type'
-      const setName = (_var) => this.setState({[_name]:_var})
-      const setType= (_var) => this.setState({[_type]:_var})
-      const setSelect= (_var) => this.setState({[select_val]:_var})
-      const onSelect = (_var) => this.onSelect(_var)
-      const Reload = (_var) => this.setState({reload:_var})
-      const setAll = (_var) => this.setState({[select_all] : _var})
-      const RemoveColumn = (_var) => this.RemoveColumn(_var)
-     
-      return(     
-        <TouchableOpacity
-          key = { key } style = {styles.viewHolder}  
-        style={{ 
-          height: 100, 
-          borderColor:isActive ? 'blue' : "#000",
-          borderBottomWidth:isActive ?  1 : 0.25,
-          borderTopWidth:isActive ?  1 : 0.25,
-          borderLeftWidth:isActive ?  2 : 0,
-          borderRightWidth:isActive ?  2 : 0,
-         // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
-          alignItems: 'center', 
-          justifyContent: 'center' 
-        }}
-        onLongPress={move}
-        onPressOut={moveEnd}
-      >              
-              <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}  pointerEvents={isActive ? 'none' : null}>             
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
-                  <TextInput                
-                  placeholder={"column name"}      
-                  value={this.state[_name]}
-                  onChangeText={_name => setName(_name)}    
-                  underlineColorAndroid='transparent' 
-                  style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
-                  />
+              <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
+                <RNPickerSelect
+                    placeholder={placeholder}
+                    items={select}
+                    onValueChange={(value) => {
+                      this.onSelect(_type, value, data.index)
+                    }}
+                    style={pickerSelectStyles}
+                    value={this.state[_type]}
+               
+                />   
+              </View>
+              <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
+              <TouchableOpacity 
+                activeOpacity = {0.9}
+                onPress={()=> RemoveColumn(inx)} 
+                >
+                 <Icon name={'close-o'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+
+                </TouchableOpacity>
+              </View>
+              <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 0} : {display:'none'}}>
+              <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
+              <TextInput                
+                placeholder={'add items'}       
+                returnKeyType = {'done'}
+                returnKeyLabel ={"send"}
+                onSubmitEditing={()=> (this.state[select_val] !== "" && this.state[select_all].indexOf(this.state[select_val]) == -1) ? [setSelect(""), this.state[select_all].push(this.state[select_val])] : {}}
+                value={this.state[select_val]}
+                onChangeText={_value =>setSelect(_value)} 
+               // underlineColorAndroid='transparent' 
+                style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
+                />
                 </View>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
-                  <RNPickerSelect
-                      placeholder={placeholder}
-                      items={select}
-                      onValueChange={(value) => {
-                        this.onSelect(_type, value, item.label)
-                      }}/*
-                      onUpArrow={() => {
-                          this.inputRefs.firstTextInput.focus();r
-                      }}
-                      onDownArrow={() => {
-                          this.inputRefs.favSport1.togglePicker();
-                      }} */
-                      style={pickerSelectStyles}
-                      value={this.state[_type]}
-                    //  ref={(el) => {
-                      //   this.inputRefs.favSport0 = el;
-                    // }}
-                  />   
+                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '60%' }}>
+                <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
+
+                { this.state[select_all] !== undefined ? this.state[select_all].map((item, key)=>(
+                <View key={ item } style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
+                <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
+                <Text> { item }</Text>
                 </View>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
+                 <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
                 <TouchableOpacity 
-                  activeOpacity = {0.9}
-                  onPress={()=> RemoveColumn(item.label)} 
-                  >
-                   <Icon name={'close-o'} size={30} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
-
-                  </TouchableOpacity>
+                activeOpacity = {0.9}
+                onPress={()=> [setSelect(""), this.state[select_all].splice(this.state[select_all].indexOf(item),1)]} 
+                >
+                <Icon name={'close'} size={20} color={"#000"} style={{paddingTop:2, textAlign:'left', paddingRight:10}} />
+                </TouchableOpacity>
                 </View>
-                <View style={this.state[index]  != undefined && this.state[index] == true ? {flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 0} : {display:'none'}}>
-                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}}>
-                <TextInput                
-                  placeholder={'add items'}       
-                  returnKeyType = {'done'}
-                  returnKeyLabel ={"send"}
-                  onSubmitEditing={()=> (this.state[select_val] !== "" && this.state[select_all].indexOf(this.state[select_val]) == -1) ? [setSelect(""), this.state[select_all].push(this.state[select_val])] : {}}
-                  value={this.state[select_val]}
-                  onChangeText={_value =>setSelect(_value)} 
-                 // underlineColorAndroid='transparent' 
-                  style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
-                  />
-                  </View>
-                  <View style={{flexDirection: "column", flexWrap: 'wrap', width: '60%' }}>
-                  <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
+                </View>
+                )
+                ) : setAll([])}
+                </View>
+                </View>
+             
+                </View>                         
+            </View>
+            </Animated.View>
+        
+    );
 
-                  { this.state[select_all] !== undefined ? this.state[select_all].map((item, key)=>(
-                  <View key={ item } style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center'}} >
-                  <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
-                  <Text> { item }</Text>
-                  </View>
-                   <View style={{flexDirection: "column", flexWrap: 'wrap'}}>
-                  <TouchableOpacity 
-                  activeOpacity = {0.9}
-                  onPress={()=> [setSelect(""), this.state[select_all].splice(this.state[select_all].indexOf(item),1)]} 
-                  >
-                  <Icon name={'close'} size={20} color={"#000"} style={{paddingTop:2, textAlign:'left', paddingRight:10}} />
-                  </TouchableOpacity>
-                  </View>
-                  </View>
-                  )
-                  ) : setAll([])}
-                  </View>
-                  </View>
-               
-                  </View>                         
-              </View>
-            </TouchableOpacity>
-          
-      );
-  }
 }
+  render() {
+    
+    console.log("this.state.Data!!!", this.state.data)
+    var data =this.state.data
     
     return (
       <View style={{ flex: 1}}>
@@ -732,13 +615,16 @@ const renderItem =  ({ item, move, moveEnd, isActive }) => {
         />
         </View>
         <ScrollView>
-            <DraggableFlatList
-              data={this.state.data}
-              renderItem={renderItem}
-              keyExtractor={(item, index) => `draggable-item-${item.key}`}
-              scrollPercent={5}
-              onMoveBegin={(index) => index.active}
-              onMoveEnd={({ data }) => this.setState({ data })}
+            <SortableList
+              data={data}
+              onChangeOrder={(nextOrder) => console.log(nextOrder)}
+              renderRow={(data)=>this._renderRow(data)}
+              //style={{}}
+              contentContainerStyle={{flex:1, paddingHorizontal:10, width:window.width}}
+              //keyExtractor={(item, index) => `draggable-item-${item.key}`}
+             // scrollPercent={5}
+             // onMoveBegin={(index) => index.active}
+            //  onMoveEnd={({ data }) => this.setState({ data })}
             />
         </ScrollView>
         <View style={{width:'100%', marginTop:0, marginBottom: 0, padding:10}}>   
@@ -802,7 +688,15 @@ Button:{
   backgroundColor: '#01579b', 
   padding: 10, 
   marginBottom:5, 
-  width:'100%'} 
+  width:'100%'},
+  list: {
+    flex: 1,
+  },
+
+  contentContainer: {
+    width: '100%'  
+    
+  }, 
  
 });
 
@@ -831,4 +725,5 @@ const pickerSelectStyles = StyleSheet.create({
       color: 'black',
       paddingRight: 30, // to ensure the text is never behind the icon
   },
+  
 });
