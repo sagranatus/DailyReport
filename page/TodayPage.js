@@ -1,7 +1,7 @@
 // Home screen
 import React, { Component } from 'react';
-//import react in our code.
-import { AsyncStorage, Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard, ScrollView } from 'react-native';
+import { Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 //import all the components we are going to use.
 import {NavigationEvents} from 'react-navigation'
 import { openDatabase } from 'react-native-sqlite-storage'
@@ -11,12 +11,13 @@ import RNPickerSelect from 'react-native-picker-select';
 import CalendarStrip from 'react-native-calendar-strip';
 import Icon from 'react-native-vector-icons/EvilIcons';
 import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
+
 const tableArray = new Array()
-var arrays = new Array()
-var arrays_removed = new Array()
-var columns = new Array()
-var values = new Array()
-var RecordDates = new Array()
+var arrays = new Array() // 현재 있는 컬럼 배열
+var arrays_removed = new Array() // 삭제된 컬럼 배열
+var columns = new Array() // column 정보
+var values = new Array() // ?? 없는값?
+var RecordDates = new Array() // getallpoints 모든 값
 const placeholder = {
   label: 'Select a table',
   value: null,
@@ -95,6 +96,9 @@ export default class TodayPage extends React.Component {
     var today = year+"-"+month+"-"+day
     var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
 
+    // table가져와서 table에 setState, today날짜, today_show, selectedDate today로 setState, thisMonth setState
+    // getTableName로 모든 테이블명 가져와서 세팅
+    // getTableDB로 
     AsyncStorage.getItem('table', (err, result) => {      
     this.getTableName(result)  
         this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
@@ -102,7 +106,7 @@ export default class TodayPage extends React.Component {
       }) 
   }
 
-  
+  // table이름 모두 가져와서 보이기
   getTableName(table){    
     const setState = (_var) => this.setState({tableArray:_var, table:table})
     db.transaction(tx => {
@@ -114,16 +118,16 @@ export default class TodayPage extends React.Component {
       //  값이 있는 경우에 
         if (len > 0) {
           const tableArray = new Array() 
-          console.log("tables exist")
+         
           for(var i=0; i<results.rows.length; i++){
           const table_name = results.rows.item(i).table_name   
           if(tableArray.indexOf(table_name) < 0 ){
-            console.log(table_name)
+          //  console.log(table_name)
             tableArray.push({
               label: table_name,
               value: table_name,
             });
-            console.log(tableArray)
+           // console.log(tableArray)
             } 
             if(i == results.rows.length-1){    
               tableArray.push({
@@ -132,25 +136,21 @@ export default class TodayPage extends React.Component {
               });              
             }
           }
+          //tableArray에 값 삽입해서 setState
+          console.log("tables exist - getTableName", tableArray)
           setState(tableArray)
            
         }else{
-          console.log("no table _ app.js")
-         /* if(tableArray.length == 0){
-            tableArray.push({
-              label: "add table",
-              value: "add table"
-            });  
-            setState(true)
-          } */
-          
+          console.log("no table - getTableName")
+                  
         }
       });
     });
   }
 
+  //선택된 table에 대해서 tableDB 가져옴
   getTableDB(table_name){
-    console.log("thisMonth",this.state.thisMonth)
+    console.log("thisMonth - getTableDB",this.state.thisMonth)
     const setColumn = (column) => this.setState({column: column})
     const getValue = (table_id) => this.getValues(table_id, this.state.selectedDate);
     const getSelects = (table_id, columns) => this.getSelects(table_id, columns)
@@ -166,11 +166,13 @@ export default class TodayPage extends React.Component {
           //  값이 있는 경우에 
             if (len > 0) {  
               var table_id = results.rows.item(0).table_id
+              // table_id setState세팅
               setState(table_id)
               tx.executeSql(
                 'SELECT * FROM typeinfo where table_id = ? ORDER BY ABS(column_order)',
                 [table_id],
-                (tx, results) => {                  
+                (tx, results) => {    
+                  // table_id로 column 및 type정보 가져옴              
                   arrays.length = 0
                   columns.length = 0
                   var len = results.rows.length;
@@ -180,28 +182,32 @@ export default class TodayPage extends React.Component {
                     for(var i=0; i<results.rows.length; i++){
                       column = results.rows.item(i).column_name
                       type = results.rows.item(i).column_type
-                      console.log("show Order",column+type)
+                      console.log("column, type - getTableDB",column+"|"+type)
+                      // select인 경우에는 arrays에 select 정보 삽입할 수 있도록 함
                       if(type == "select"){
                         arrays.push({key: table_id+column, title:column, type: "select", select:[]})                         
-                      }else if(type == "check box"){                        
-                       arrays.push({key: table_id+column, title:column, type: type})                       
                       }else{                        
                         arrays.push({key: table_id+column, title:column, type: type})
-                       }
-                       //   columns.length = 0
-                       columns.push({column, type})                        
+                       }                     
+                       columns.push({column, type})          
+                       if(i == results.rows.length-1){                        
+                        console.log("columns - getTableDB", columns)
+                        console.log("arrays info - getTableDB", arrays)
+                        // setState columns에 삽입
+                        setColumn(columns)  
+                        // selects 정보 가져오기
+                        getSelects(table_id, columns)          
+                        // value 가져오기
+                        getValue(table_id)
+                        // 이번달에 대해서 값있는 경우 points 찍도록 함   
+                        getAllPoints(table_id)
+                       }              
                     } 
-                    console.log("columns", columns)
-                    console.log("info!!", arrays)
-                    setColumn(columns)  
-                    getSelects(table_id, columns)          
-                    getValue(table_id)   
-                    getAllPoints(table_id)
                   }
                 }
               )
             }else{               
-              //alert('table is not exists!!')   
+              console.log("no exist - getTableDB")
             }
           }
         );           
@@ -209,6 +215,7 @@ export default class TodayPage extends React.Component {
     });
   }
 
+  // select 정보 가져옴
   getSelects(table_id, columns){
     
     columns.map(( item, key ) =>
@@ -229,18 +236,17 @@ export default class TodayPage extends React.Component {
             for(var i=0; i<results.rows.length; i++){
               column = results.rows.item(i).column_name
               select_val = results.rows.item(i).select_value
-              console.log(column+select_val)
               selects.push({
                   label: select_val,
                   value: select_val
               })
-            } 
-            console.log("selects2",selects)
+            }             
+            console.log("selects info - getSelects",column+selects)
             const itemToFind = arrays.find(function(item) {return item.title === column}) 
                const idx = arrays.indexOf(itemToFind)           
                if(idx > -1){
                 arrays[idx]["select"] = selects
-                console.log(arrays)
+                console.log("arrays after selects정보 삽입 - getSelects", arrays)
                }  
           }
         }
@@ -250,13 +256,17 @@ export default class TodayPage extends React.Component {
   }
   })
 }
+
+//값 가져오기
   getValues(table_id, date){ 
-    //일단 제거한 뒤에 삽입할 것.
+    //일단 모든 값 제거
    for(var j=0; j<arrays.length; j++){
     arrays[j]["value"] = ""
    }
    
-   arrays_removed.length = 0
+   //삭제된 컬럼 배열 비우기
+   arrays_removed.length = 0 
+
    const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
    const setColor = (_var1) => this.setState({backColor: _var1})   
    const Exist = (_var) =>  this.setState({dataExist : _var})  
@@ -270,32 +280,32 @@ export default class TodayPage extends React.Component {
          [date, table_id],
          (tx, results) => {
            var len = results.rows.length;
-         //  값이 있는 경우에 
+         //  값이 있는 경우에 색상과 readonly setState
          var column, value
-           if (len > 0) {          
-
+           if (len > 0) { 
              setColor('#CEF6F5') 
              if(showUpdate){
                setValue('readonly', false)
              }else{
              setValue('readonly', true)
              }
-             values.length = 0
-          //   alert("there is!")
              for(var i=0; i<results.rows.length; i++){
            
                column = results.rows.item(i).column_name 
                value = results.rows.item(i).column_value
             
              //  setValue(column, value) // 수정때문에 필요하다.
-               console.log("Val", column+value)
+               console.log("column, value - getValues", column+"|"+value)
+               
+               // arrays의 컬럼이름에 해당하는 것이 value값 삽입
                const itemToFind = arrays.find(function(item) {return item.title === column}) 
                const idx = arrays.indexOf(itemToFind)           
                if(idx > -1){
                 arrays[idx]["value"] = value
-                console.log(arrays)
+                console.log("arrays after value값 삽입 - getValues", arrays)
                }else{
-                 console.log("removed column get", column + value)
+                 // 컬럼이 없는 경우, 즉 삭제된 경우에는 따로 arrays_removed에 값을 삽입해서 보여주도록 함.
+                 console.log("removed column get - getValues", column +"|"+ value)
                  // 삭제된 컬럽 값 가져오기
                  
                 arrays_removed.push({
@@ -305,30 +315,22 @@ export default class TodayPage extends React.Component {
                   value: value
                 })
                }
-
+               
                if(i == results.rows.length-1){
                 var uniq = {}
-                arrays_removed = arrays_removed.filter(obj => !uniq[obj.title] && (uniq[obj.title] = true));
-             //   arrays_removed = this.getUniqueObjectArray(arrays_removed, title)
+                // 만약 arrays_removed 배열에 중복값이 있는 경우 중복 제거
+                arrays_removed = arrays_removed.filter(obj => !uniq[obj.title] && (uniq[obj.title] = true));            
                }
                
-               console.log("removed",  arrays_removed)
+               console.log("arrays_removed 결과값 - getValues",  arrays_removed)
              } 
-             
+             // 모두 가져온 뒤에 dataExist setState()
              Exist(true)
-           }else{    
+           }else{  
+              // 값이 없는 경우에는 색상, readonly, dataExist setState()
                setColor('#ECF8E0')       
-               setValue('readonly', false)            
-             /*
-             console.log("column!",column_origin)
-             column_origin.map(( item_, key ) =>
-             {
-               const itemToFind = arrays.find(function(item) {return item.title === item_.column}) 
-               const idx = arrays.indexOf(itemToFind)           
-               arrays[idx]["value"] = ""
-             })  
-             console.log(arrays) */
-             Exist(false)
+               setValue('readonly', false)    
+               Exist(false)
            }
          }
        )
@@ -336,37 +338,9 @@ export default class TodayPage extends React.Component {
    });
  }
 
- getValuesForUpdate(table_id, date){    
-
-  const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
-  db.transaction(tx => {
-      db.transaction(function(tx) {
-      tx.executeSql(
-        'SELECT * FROM valueinfo where record_date = ? AND table_id = ? ',
-        [date, table_id],
-        (tx, results) => {
-          var len = results.rows.length;
-        //  값이 있는 경우에 
-        var column, value
-          if (len > 0) {
-            values.length = 0
-           // alert("there is!")
-            for(var i=0; i<results.rows.length; i++){
-              column = results.rows.item(i).column_name
-              value = results.rows.item(i).column_value
-              console.log("getValuesForupdate", column+value)
-              setValue(column, value) // 수정때문에 필요하다
-            } 
-          }else{ 
-          }
-        }
-      )
-    })
-  });
-}
-
  
  
+ // 해당 월에 해당되는 points 모두 가져오기
  getAllPoints(table_id, month){
   const setRecords = (_var) => this.setState({records: _var})
   RecordDates.length = 0
@@ -377,8 +351,7 @@ export default class TodayPage extends React.Component {
         [table_id, '2019-'+month+'%'],
         (tx, results) => {
           var len = results.rows.length;
-          if (len > 0) {     
-              console.log("get data")    
+          if (len > 0) {       
               var date = results.rows.item(0).record_date;
               var date;
               var realDate;
@@ -391,20 +364,22 @@ export default class TodayPage extends React.Component {
                 }
               }
               this.recordFunc(RecordDates)
-              console.log('get data : ', RecordDates)
+              console.log('get all RecordDates - getAllPoints', RecordDates)
                           
           } else {                  
-            console.log('get data : ', "no value")        
+            console.log('no value - getAllPoints')        
+            // records setState() 비우기
             setRecords([])
           }
         }
       );
     });  
   }
-  
+
+// getAllPoints 에서 값 있는 경우
 recordFunc = (RecordDates) => {
   console.log("recordFunc")
-  // reduce -> 배열에서 중복되는 것을 빼준다.
+  // reduce -> 배열에서 중복되는 것을 빼준후에 값을 변경해서 삽입해준다. date -> date, dots
   RecordDates = RecordDates.reduce(function(a,b){if(a.indexOf(b)<0)
     a.push({
     date:b,
@@ -415,21 +390,72 @@ recordFunc = (RecordDates) => {
         }
     ],
  });return a;},[]);
- console.log(RecordDates)
+ console.log("recordsDates변형 - recordFunc",RecordDates)
+ //records setState()함
  this.setState({records: RecordDates})
   }
+
+
+  // **************************** 이벤트 ************************************
+  // table이름 변경시에
+  Go(value){     
+    if(value == "add table"){      
+      this.props.navigation.navigate("AddtableScreen")
+      }else{
+        try {
+          // asynstorage에서 세팅하고 다시 getTableDB
+          AsyncStorage.setItem('table', value);
+          if(value !== undefined && value !== ""){
+          this.setState({table: value})          
+          this.getTableDB(value)
+          }          
+        } catch (error) {
+          console.error('AsyncStorage error: ' + error.message);
+        }
+      }   
+  }
+  
+  // 새로 로딩되는 경우에
+  setChange(){ 
+    // 테이블 add된 경우 add된 테이블에 대한 정보를 가져옴
+    const { params } = this.props.navigation.state;
+    if(params != null){
+      console.log("navigation params existed : ",params.otherParam)     
+      var weekEngShortName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
+      var date = new Date();
+      var year = date.getFullYear();
+      var month = date.getMonth()+1
+      var day = date.getDate();
+      if(month < 10){
+          month = "0"+month;
+      }
+      if(day < 10){
+          day = "0"+day;
+      } 
+      var today = year+"-"+month+"-"+day
+      var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
+  
+      AsyncStorage.getItem('table', (err, result) => {
+        this.getTableName(result)
+          this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
+          this.getTableDB(result)            
+        }) 
+      
+      }
+  }
+
   
 
-  // insert 및 update function
+  // insertValue 이벤트
   InsertValue(date){
     Keyboard.dismiss()
-  //  columns = this.state.column
-    console.log("columns",this.state.column)
+    console.log("columns - InsertValue",this.state.column)
     if(this.state.column !== undefined){    
     var arrays = new Array()
       this.state.column.map(( item, key ) =>
     {      
-      console.log(item.column + this.state[item.column])  
+      console.log("column, value(this.state.column) check - InsertValue", item.column +"|"+ this.state[item.column])  
+      // checkbox인 경우에 undefined인 경우 false를 삽입한다.
       if(item.type == "check box"){
         arrays.push({
           column : item.column,
@@ -443,6 +469,7 @@ recordFunc = (RecordDates) => {
       }    
      
     })  
+    // 값이 undefined이거나 비어있는 경우에는 채우라는 표시를 넣는다.
     const itemToFind = arrays.find(function(item) {return item.value === undefined}) 
     const idx = arrays.indexOf(itemToFind) 
 
@@ -456,49 +483,20 @@ recordFunc = (RecordDates) => {
     } 
   }
 
-  UpdateValue(date){
-    Keyboard.dismiss()
-    const table_id = this.state.table_id
-    //  columns = this.state.column
-      console.log("columns",this.state.column)
-      if(this.state.column !== undefined){                 
-      var arrays = new Array()
-      var arrays2 = new Array()
-        this.state.column.map(( item, key ) =>
-       { 
-          arrays.push({
-            column : item.column,
-            value :  this.state[item.column]
-          })             
-
-       })  
-      const itemToFind = arrays.find(function(item) {return item.value === undefined}) 
-      const idx = arrays.indexOf(itemToFind) 
-  
-      const itemToFind2 = arrays.find(function(item) {return item.value === ""}) 
-      const idx2 = arrays.indexOf(itemToFind2) 
-      console.log(arrays)
-      if (idx > -1 || idx2 > -1){
-        alert("please fill the column value")
-      }else{
-        this.UpdateValueToTable(this.state.table_id, date, arrays)
-      } 
-      } 
-    }
-
-    
-  
-
-  
+  // 테이블에 값을 삽입
   InsertValueToTable(table_id, date, array_column){
     const setReadOnly = (_var) => this.setState({readonly: _var})
     const setExist = (_var) => this.setState({dataExist: _var})    
     const setColor = (_var) => this.setState({backColor:_var})
-    const getAllPoints = (_var) => this.getAllPoints(this.state.table_id, this.state.thisMonth)
-    console.log(table_id + date + arrays);
-    console.log("here", array_column)
+    const setPoints = (_var) => this.setState({records:_var})
+    console.log("id, date - InsertValueToTable", table_id +"|"+ date);
+    console.log("column - InsertValueToTable", array_column)
+    
+    var data = this.state.records
+
     var arrays = new Array()
     var add = ''
+    // 컬럼을 하나씩 꺼내서 value 값을 가져와서 삽입
     array_column.map(( item ) =>
         {
           arrays.push(table_id, date, item.column, item.value )
@@ -507,8 +505,8 @@ recordFunc = (RecordDates) => {
     )
   
     add = add.substr(0, add.length -1);
-    console.log(arrays)
-    console.log(add)
+    console.log("삽입 arrays - InsertValueToTable",arrays)
+    console.log("삽입 add - InsertValueToTable",add)
     db.transaction(function(tx) {
       tx.executeSql(
         'INSERT INTO valueinfo (table_id, record_date, column_name, column_value) VALUES '+add,
@@ -517,10 +515,22 @@ recordFunc = (RecordDates) => {
           if (results.rowsAffected > 0) {
             console.log('value insert : ', "success") 
             alert("data inserted")
+            // 데이터 삽입후에 readonly, dataExist, color 변경, 그리고 getAllpoints로 삽입한 값도 점보이게
             setReadOnly(true)
             setExist(true)
             setColor('#CEF6F5')
-            getAllPoints(true)
+           // 오늘날짜 삽입
+            data.push({
+              date:date,
+              dots: [
+                  {
+                  color: "#01579b",
+                  selectedDotColor: "#01579b",
+                  }
+              ],
+           })
+           console.log("data - InsertValueToTable", data)
+           setPoints(data)
           } else {
             console.log('value insert : ', "failed")
           }
@@ -530,11 +540,71 @@ recordFunc = (RecordDates) => {
 
   }
 
+  
+  // edit value 누르면 values 가져오는 이벤트 - 각 column value setState() 를 위해서 필요 // 그냥 값을 가져올때는 setState할 필요없게 하기 위해
+ getValuesForUpdate(table_id, date){ 
+  const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
+  db.transaction(tx => {
+      db.transaction(function(tx) {
+      tx.executeSql(
+        'SELECT * FROM valueinfo where record_date = ? AND table_id = ? ',
+        [date, table_id],
+        (tx, results) => {
+          var len = results.rows.length;
+        //  값이 있는 경우에 
+        var column, value
+          if (len > 0) {
+            for(var i=0; i<results.rows.length; i++){
+              column = results.rows.item(i).column_name
+              value = results.rows.item(i).column_value
+              console.log("column, value - getValuesForupdate", column+"|"+value)
+              setValue(column, value) // 수정때문에 필요하다
+            } 
+          }else{ 
+          }
+        }
+      )
+    })
+  });
+}
+
+// update할때 이벤트
+  UpdateValue(date){
+    Keyboard.dismiss()
+    const table_id = this.state.table_id
+    //  columns = this.state.column
+     // console.log("columns",this.state.column)
+      if(this.state.column !== undefined){                 
+      var arrays = new Array()
+        this.state.column.map(( item, key ) =>
+       { 
+          arrays.push({
+            column : item.column,
+            value :  this.state[item.column]
+          })             
+
+       })  
+       
+      console.log("updated arrays - UpdateValue", arrays)
+      const itemToFind = arrays.find(function(item) {return item.value === undefined}) 
+      const idx = arrays.indexOf(itemToFind) 
+  
+      const itemToFind2 = arrays.find(function(item) {return item.value === ""}) 
+      const idx2 = arrays.indexOf(itemToFind2) 
+      if (idx > -1 || idx2 > -1){
+        alert("please fill the column value")
+      }else{
+        this.UpdateValueToTable(this.state.table_id, date, arrays)
+      } 
+      } 
+    }
+
+  // 테이블 값 업데이트하기
   UpdateValueToTable(table_id,date,array_column){    
     const setReadOnly = (_var) => this.setState({readonly: _var})
     const setUpdate = (_var) => this.setState({showUpdate: _var})
-    var arrays = new Array()
-    var add = ''
+  
+    // 컬럼하나씩 꺼내서 값을 삽입 혹은 수정
     array_column.map(( item ) =>
         {
           db.transaction(function(tx) {
@@ -543,7 +613,7 @@ recordFunc = (RecordDates) => {
               [table_id, item.column, date],
               (tx, results) => {                            
                 var len = results.rows.length;
-                //  값이 있는 경우에 
+                //  값이 있는 경우에는 update, 없는 경우에는 insert - 새로 컬럼을 만드는 경우에 insert가 필요하다.
                   if (len > 0) {
                     tx.executeSql(
                       'UPDATE valueinfo SET column_value = ? WHERE table_id =? and column_name=? and record_date =?',
@@ -574,84 +644,22 @@ recordFunc = (RecordDates) => {
               this.setState({showUpdate:false, readonly:true})
         }  
     )
-    //arrays.push(table_id, date)
-    //console.log(arrays)
-   // console.log(add)
 
-
-    /*console.log("here", table_id + date)
-    const setReadOnly = (_var) => this.setState({readonly: _var})
-    const setUpdate = (_var) => this.setState({showUpdate: _var})
-    var arrays = new Array()
-    var add = ''
-    array_column.map(( item ) =>
-        {
-          arrays.push(item.column, item.value )
-          add = add+"WHEN ? THEN ? "  
-        }  
-    )
-    arrays.push(table_id, date)
-    console.log(arrays)
-    console.log(add)
-
-    var arrays2 = new Array()
-    var add2 = ''
-    array_column2.map(( item ) =>
-        {
-          arrays2.push(table_id, date, item.column, item.value )
-          add2 = add2+"(?,?,?,?),"  
-        }  
-    )
-  
-    add2 = add2.substr(0, add2.length -1);
-    console.log(arrays2)
-    console.log(add2)
-
-    db.transaction(function(tx) {
-      tx.executeSql(
-        'UPDATE valueinfo SET column_value = CASE column_name '+add+' ELSE column_value END WHERE table_id =? and record_date =?',
-        arrays,
-        (tx, results) => {                            
-          if (results.rowsAffected > 0) {
-            console.log('value update : ', "success") 
-            alert("data updated")
-            setUpdate(false)
-            setReadOnly(true)
-          } else {
-            console.log('value update : ', "failed")
-          }
-        }
-      )
-    });  
-
-    db.transaction(function(tx) {
-      tx.executeSql(
-        'INSERT INTO valueinfo (table_id, record_date, column_name, column_value) VALUES '+add2,
-        arrays2,
-        (tx, results) => {                            
-          if (results.rowsAffected > 0) {
-            console.log('value insert : ', "success") 
-          } else {
-            console.log('value insert : ', "failed")
-          }
-        }
-      )
-    });  
-
-*/
-    // 삭제된 값 수정
+    // 삭제된컬럼 값 수정
     if(arrays_removed.length !== 0){
       var columns_removed = new Array()
-      console.log("remove1", arrays_removed)
+      console.log("arrays_removed - UpdateValueToTable", arrays_removed)
       arrays_removed.map(( item ) =>
       {
         columns_removed.push(item.title)
       }  
       )
-      console.log("remove2", columns_removed)
+      // 컬럼만으로 배열 다시 만든다
+      console.log("removed column array - UpdateValueToTable", columns_removed)
   
       var arrays_ = new Array()
       var add_ = ''
+      //삭제된 컬럼을 하나씩 꺼내서 값을 수정한다.
       columns_removed.map(( item, key ) =>
       {      
         arrays_.push(item, this.state[item] )
@@ -659,8 +667,8 @@ recordFunc = (RecordDates) => {
       })
      
       arrays_.push(table_id, date)
-      console.log("remove3", arrays_)
-      console.log("remove4",add_)
+      console.log("removed_array 값수정 arrays - UpdateValueToTable", arrays_)
+      console.log("removed_array 값수정 add - UpdateValueToTable", add_)
       db.transaction(function(tx) {
         tx.executeSql(
           'UPDATE valueinfo SET column_value = CASE column_name '+add_+' ELSE column_value END WHERE table_id =? and record_date =?',
@@ -669,6 +677,7 @@ recordFunc = (RecordDates) => {
             if (results.rowsAffected > 0) {
               console.log('value update : ', "success") 
              // alert("data updated")
+             // 수정이 성공하면 showUpdate, readonly setState함.
               setUpdate(false)
               setReadOnly(true)
             } else {
@@ -676,65 +685,12 @@ recordFunc = (RecordDates) => {
             }
           }
         )
-      });  
-      
-    }
-   
-    
+      });        
+    }      
   }
 
-  // table이름 변경시에
-  Go(value){     
-    if(value == "add table"){      
-      this.props.navigation.navigate("AddtableScreen")
-      }else{
-        try {
-          AsyncStorage.setItem('table', value);
-          if(value !== undefined && value !== ""){
-          this.setState({table: value})          
-          this.getTableDB(value)
-          }          
-        } catch (error) {
-          console.error('AsyncStorage error: ' + error.message);
-        }
-      }   
-  }
 
-  setChange(){ 
-    // 테이블 add된 경우 add된 테이블을 가져옴
-    const { params } = this.props.navigation.state;
-    if(params != null){
-      console.log("navigation params existed : ",params.otherParam)     
-      var weekEngShortName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
-      var date = new Date();
-      var year = date.getFullYear();
-      var month = date.getMonth()+1
-      var day = date.getDate();
-      if(month < 10){
-          month = "0"+month;
-      }
-      if(day < 10){
-          day = "0"+day;
-      } 
-      var today = year+"-"+month+"-"+day
-      var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
-  
-      AsyncStorage.getItem('table', (err, result) => {
-        this.getTableName(result)
-          this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
-          this.getTableDB(result)            
-        }) 
-      
-      }
-  }
-
-  // listview row값에서 값 변경시 이벤트 - setState
-  onChange(title,value){
-    this.setState({[title]:value})
-    console.log(this.state.title)
-  }
-
-  // 달력관련이벤트 
+  // 달력관련이벤트 - 날짜선택시 getvalues
   onDateSelect(date){
     Keyboard.dismiss()
     var year = date.getFullYear();
@@ -764,12 +720,11 @@ recordFunc = (RecordDates) => {
     }
   }
 
-
+// 달력관련이벤트 - 화살표 전후 선택시
   onWeekendSelect(date){
   //  var date = date.setDate(date.getDate() + 3)
-    console.log(this.state.table_id)
+    console.log("selected - onWeekendSelect")
     date.setDate(date.getDate() + 6)
-    //alert(date.getMonth)
     var month = date.getMonth()+1   
     if(month < 10){
         month = "0"+month;
@@ -784,25 +739,27 @@ recordFunc = (RecordDates) => {
   // swipe event
   onSwipe(gestureName, gestureState) {
     var date = this.state.selectedDate
+    // 선택된 날짜를 가져옴.
     var y = date.substr(0,4),
     m = date.substr(5,2) -1,
     d = date.substr(8,2);
     var D = new Date(y,m,d);
-    console.log(date + D)
+    console.log("date 형식변경 - onSwipe",  D)
     const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
     this.setState({gestureName: gestureName});
     switch (gestureName) {
       case SWIPE_UP:
-        this.setState({backgroundColor: 'red'});
+       // this.setState({backgroundColor: 'red'});
         break;
       case SWIPE_DOWN:
-        this.setState({backgroundColor: 'green'});
+       // this.setState({backgroundColor: 'green'});
         break;
       case SWIPE_LEFT:
+        // 왼쪽으로 움직일경우 날짜 하루더한 뒤에 그날짜 선택이벤트, 일요일인 경우에 updateWeekView
        D.setDate(D.getDate() + 1)
        if (this.calendar !== null) {
         this.calendar.setSelectedDate(D)	
-        console.log(D.getDay())
+      //  console.log(D.getDay())
        if(D.getDay() ==6){
           this.calendar.updateWeekView
         }
@@ -810,6 +767,7 @@ recordFunc = (RecordDates) => {
       }
         break;
       case SWIPE_RIGHT:
+        // 오른쪽으로 움직일경우 날짜 하루 뺀 뒤에 그날짜 선택이벤트, 월요일인 경우에 updateWeekView
         D.setDate(D.getDate() - 1)
         if (this.calendar !== null) {
           this.calendar.setSelectedDate(D)	
@@ -846,18 +804,9 @@ recordFunc = (RecordDates) => {
               items={this.state.tableArray}
               onValueChange={(value) => {
                 value == null ? {} : this.Go(value)
-              }}/*
-              onUpArrow={() => {
-                  this.inputRefs.firstTextInput.focus();
               }}
-              onDownArrow={() => {
-                  this.inputRefs.favSport1.togglePicker();
-              }} */
               style={pickerSelectStyles}
               value={this.state.table}
-            //  ref={(el) => {
-              //   this.inputRefs.favSport0 = el;
-            // }}
           />    
           </View>
           <View style={this.state.table == null ? {display:'none'} : {flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>

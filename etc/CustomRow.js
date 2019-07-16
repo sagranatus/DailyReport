@@ -31,12 +31,12 @@ const styles = StyleSheet.create({
     },
     container_text: {
         flexDirection: 'column',
-        width:'20%',
+        width:'60%',
         paddingLeft: 12
     },
     container_val: {
         flexDirection: 'column',
-        width:'80%',
+        width:'40%',
         height:40
     },
     type: {
@@ -84,10 +84,10 @@ export default class CustomRow extends React.Component {
         const date = this.props.date
         const select = this.props.select
         const readonly = this.props.readonly
-        console.log("readonly1", readonly)
+       // console.log("readonly1", readonly)
       switch (this.props.type) {
         case 'select':
-        console.log("select",this.state[title])
+       // console.log("select",this.state[title])
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
@@ -100,7 +100,7 @@ export default class CustomRow extends React.Component {
                    // disabled={readonly ? true : false}
                     placeholder={placeholder}
                     items={select}
-                    onValueChange={(value) =>  [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                    onValueChange={(value) =>  [this.props.onChange(title, value), this.setState({[title+date] : value})] // 상위페이지 setState, 현재row setState(날짜포함으로)
                     }  
                     style={pickerSelectStyles}
                     value={this.state[title+date] == undefined ? val : this.state[title+date]}
@@ -109,7 +109,7 @@ export default class CustomRow extends React.Component {
             </View>
             );
         case 'text':      
-        console.log(this.state[title])  
+      //  console.log(this.state[title])  
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
@@ -122,7 +122,7 @@ export default class CustomRow extends React.Component {
                 placeholder={'add text'} 
                 value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
-                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})] // 상위페이지 setState, 현재row setState(날짜포함으로)
                 }}  
                 underlineColorAndroid='transparent' 
                 style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
@@ -131,7 +131,7 @@ export default class CustomRow extends React.Component {
             </View>
             );
         case 'description':
-          console.log(this.state[title])   
+        //  console.log(this.state[title])   
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
@@ -145,7 +145,7 @@ export default class CustomRow extends React.Component {
                 placeholder={'add description'}       
                 value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
-                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})] // 상위페이지 setState, 현재row setState(날짜포함으로)
                 }}  
                 underlineColorAndroid='transparent' 
                 style={[styles.TextInputStyleClass, {width:'100%', paddingRight:'1%', fontSize: 15}]}
@@ -154,7 +154,7 @@ export default class CustomRow extends React.Component {
             </View>
             );
         case 'number':
-          console.log(this.state[title])   
+        //  console.log(this.state[title])   
           return (
             <View style={styles.container}>
             <View style={styles.container_text}>
@@ -167,7 +167,7 @@ export default class CustomRow extends React.Component {
                 placeholder={'add number'}       
                 value={this.state[title+date] == undefined ? val : this.state[title+date]}
                 onChangeText={(value) => {
-                    [this.props.onChange(title, value), this.setState({[title+date] : value})]
+                    [this.props.onChange(title, value), this.setState({[title+date] : value})] // 상위페이지 setState, 현재row setState(날짜포함으로)
                 }}  
                 underlineColorAndroid='transparent' 
                 keyboardType={'numeric'}
@@ -266,14 +266,14 @@ export default class CustomRow extends React.Component {
                 <View style={styles.container_val} pointerEvents={readonly ? 'none' : null}>
                     <CheckBox
                     // title='Click Here'
-                     checked={this.state[title+date] == undefined ? (val == "1" ? true : false ) : this.state[title+date]}
+                     checked={this.state[title+date] == undefined ? (val == "1" ? true : false ) : this.state[title+date]} 
                      checkedColor={readonly ? '#01579b' : '#298A08'}
                      uncheckedColor={readonly ? '#01579b' : '#298A08'}
                      containerStyle={{padding:3}}
                   //   disabled = {readonly ? true : false}
                      onPress={(value) => {
                         [this.props.onChange(title, this.state[title+date] == undefined ? (val == "1" ? false : true ) : !this.state[title+date]), this.state[title+date] == undefined ? this.setState({[title+date]: (val == "1" ? false : true )}) : this.setState({[title+date]:!this.state[title+date]})]
-                    }}  
+                    }}   // 상위페이지 setState -- 값이 undefined인 경우에 val값 가져옴 -> val이 1인경우에 값이 undefined가 아닌 경우에, !statevalue -- &&  현재row setState(날짜포함으로) -- state값이 undefined인 경우에는 setState val값에 따라, 아닌 경우는 !statevalue
                     />
                 </View>
                 </View>

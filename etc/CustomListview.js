@@ -28,8 +28,8 @@ export default class CustomListView extends React.Component {
     const onChange = this.props.onChange 
     const date = this.props.date
     const readonly = this.props.readonly
-    console.log("readonly", readonly)
-    console.log("itemList", itemList)
+    //console.log("readonly", readonly)
+   // console.log("itemList", itemList)
     return(
     <View style={styles.container}>
         <VirtualizedList
@@ -38,17 +38,17 @@ export default class CustomListView extends React.Component {
          getItem={(data, index) => data[index]}
          getItemCount={data => data.length}
                 data={itemList}
-                date={date}
+              //  date={date}
                 renderItem={({ item }) => <CustomRow                
-                onChange={(title, value) => onChange(title, value)}
+                onChange={(title, value) => onChange(title, value)} // onChange이벤트 : setState()
                 title={item.title}
                 type={item.type}
                 val={item.value}
-                date={date}                
+                date={date} // 선택된 날짜         
                 readonly={readonly}
                 select={item.select}
                 tableName={tableName}
-                image_url={item.image_url}
+              //  image_url={item.image_url}
                 />}
             />      
     </View>

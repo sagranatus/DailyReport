@@ -9,7 +9,6 @@ import {
   createSwitchNavigator
 } from 'react-navigation';
 import { YellowBox } from 'react-native';
-import App from './App';
 import AddtablePage from './page/AddtablePage';
 import UpdatetablePage from './page/UpdatetablePage'
 import TodayPage from './page/TodayPage';
@@ -51,10 +50,6 @@ const Container = createAppContainer(
 export default class AppAll extends React.Component {
   constructor(props) {
     super(props);
-  }
-
-  Go(){
-    alert("dd")
   }
 
   render() {	
