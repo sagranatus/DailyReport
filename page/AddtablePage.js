@@ -46,7 +46,7 @@ constructor(props) {
     this.state={ table: undefined,
                  table_name: undefined
                 }
-    this.state = { valueArray: [], data:[], disabled: false }
+    this.state = { valueArray: [], data:[], disabled: false ,  scrollOffset: 0 }
 
     this.index = 0;
 
@@ -311,7 +311,7 @@ InsertTypes(table_id, array_column, array_select){
       (tx, results) => {                            
         if (results.rowsAffected > 0) {
           console.log('type insert : ', "success") 
-          navi("saea")
+          navi("fromAddtable")
         } else {
           console.log('type insert : ', "failed")
         }
@@ -388,17 +388,40 @@ InsertTypes(table_id, array_column, array_select){
             <Animated.View key = { key } style = {[ styles.viewHolder, { opacity: this.animatedValue, transform: [{ translateY: animationValue }] }]}>           
               <TouchableOpacity
                 key = { key } style = {styles.viewHolder} 
-                style={{ 
+                style={this.state[_type] == "select" ? { 
                   height: 100, 
-                  backgroundColor: isActive ? 'blue' : item.backgroundColor,
+                  borderColor:isActive ? '#01579b' : "#000",
+                  borderBottomWidth:isActive ?  1 : 0,
+                  borderTopWidth:isActive ?  1 : 0,
+                  borderLeftWidth:isActive ?  2 : 0,
+                  borderRightWidth:isActive ?  2 : 0,
+                 // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
                   alignItems: 'center', 
                   justifyContent: 'center' 
-                }}
-                onLongPress={move}
-                onPressOut={moveEnd}
+                } : 
+                { 
+                  height: 70, 
+                  borderColor:isActive ? '#01579b' : "#000",
+                  borderBottomWidth:isActive ?  1 : 0,
+                  borderTopWidth:isActive ?  1 : 0,
+                  borderLeftWidth:isActive ?  2 : 0,
+                  borderRightWidth:isActive ?  2 : 0,
+                 // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }
+              }
               >                      
                 <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}>
-                  <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
+                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
+                <TouchableOpacity
+                onLongPress={move}
+                onPressOut={moveEnd}
+                >
+               <Icon name={'navicon'} size={20} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+                </TouchableOpacity>   
+               </View>          
+                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
                     <TextInput                
                     placeholder={"column name"}      
                     value={this.state[_name]}
@@ -492,22 +515,40 @@ InsertTypes(table_id, array_column, array_select){
         return(     
           <TouchableOpacity
             key = { key } style = {styles.viewHolder} 
-            style={{ 
+            style={this.state[_type] == "select" ? { 
               height: 100, 
-              borderColor:isActive ? 'blue' : "#000",
-              borderBottomWidth:isActive ?  1 : 0.25,
-              borderTopWidth:isActive ?  1 : 0.25,
+              borderColor:isActive ? '#01579b' : "#000",
+              borderBottomWidth:isActive ?  1 : 0,
+              borderTopWidth:isActive ?  1 : 0,
               borderLeftWidth:isActive ?  2 : 0,
               borderRightWidth:isActive ?  2 : 0,
              // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
               alignItems: 'center', 
               justifyContent: 'center' 
-            }}
-            onLongPress={move}
-            onPressOut={moveEnd}
+            } : 
+            { 
+              height: 70, 
+              borderColor:isActive ? '#01579b' : "#000",
+              borderBottomWidth:isActive ?  1 : 0,
+              borderTopWidth:isActive ?  1 : 0,
+              borderLeftWidth:isActive ?  2 : 0,
+              borderRightWidth:isActive ?  2 : 0,
+             // backgroundColor: isActive ? 'blue' : item.ackgroundColor,
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }
+          }
         >              
                 <View style={{flexDirection: "row", flexWrap: 'wrap', justifyContent: 'center', marginTop: 10}}  pointerEvents={isActive ? 'none' : null}>
-                  <View style={{flexDirection: "column", flexWrap: 'wrap', width: '50%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
+                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%'}}>
+                <TouchableOpacity
+                onLongPress={move}
+                onPressOut={moveEnd}
+                >
+               <Icon name={'navicon'} size={20} color={"#000"} style={{paddingTop:8, textAlign:'right', paddingRight:10}} />
+                </TouchableOpacity>   
+               </View>          
+                <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%'}} pointerEvents={this.state[readonly] ? 'none' : null}>
                     <TextInput                
                     placeholder={"column name"}      
                     value={this.state[_name]}
@@ -591,7 +632,8 @@ InsertTypes(table_id, array_column, array_select){
                   {"<"} BACK
               </Text>
           </TouchableOpacity>  
-        <KeyboardAwareScrollView extraHeight={10}>    
+          <KeyboardAwareScrollView extraHeight={10} onScrollEndDrag={({ nativeEvent }) => { this.setState({ scrollOffset: nativeEvent.contentOffset['y'] }); }}
+            onMomentumScrollEnd={({ nativeEvent }) => { this.setState({scrollOffset: nativeEvent.contentOffset['y']})}}> 
         <View style={{ flex: 1, alignItems: 'center'}}>
         <Text>table name</Text>
         <TextInput                
@@ -601,17 +643,15 @@ InsertTypes(table_id, array_column, array_select){
         underlineColorAndroid='transparent' 
         style={[styles.TextInputStyleClass, {width:'98%', margin:'1%', fontSize: 15}]}
         />
-        <ScrollView>
-            <View style = {{ flex: 1, padding: 4 }}>
-            <DraggableFlatList
-              data={this.state.data}
-              renderItem={renderItem}
-              keyExtractor={(item, index) => `draggable-item-${item.key}`}
-              scrollPercent={5}
-              onMoveEnd={({ data }) => this.setState({ data })}
-            />
-            </View>
-        </ScrollView>
+        <DraggableFlatList
+          data={this.state.data}
+          scrollingContainerOffset={this.state.scrollOffset}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => `draggable-item-${item.key}`}
+          scrollPercent={5}
+        //   onMoveBegin={(index) => index.active}
+          onMoveEnd={({ data }) => this.setState({ data })}
+        />
         <TouchableOpacity 
         activeOpacity = {0.9}
         onPress={()=> this.AddColumn(this.index)} 

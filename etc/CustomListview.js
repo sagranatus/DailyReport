@@ -4,7 +4,7 @@ import CustomRow from './CustomRow';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flex: 1
     },
 });
 
@@ -12,8 +12,7 @@ const styles = StyleSheet.create({
 export default class CustomListView extends React.Component {
     constructor(props) {
         super(props);
-        console.log("constructor CustomListView")
-   
+        console.log("constructor CustomListView")   
     }
     componentWillMount(){         
         
@@ -28,11 +27,15 @@ export default class CustomListView extends React.Component {
     const onChange = this.props.onChange 
     const date = this.props.date
     const readonly = this.props.readonly
+    const showUpdate = this.props.showUpdate
     //console.log("readonly", readonly)
    // console.log("itemList", itemList)
     return(
-    <View style={styles.container}>
-        <VirtualizedList
+    <View 
+    style={styles.container}
+   // style={readonly ? [styles.container, {backgroundColor: "#fff" }] : showUpdate ? [styles.container, {backgroundColor: "#01579b" }] : [styles.container, {backgroundColor: "#298A08" }]}>
+   >
+   <VirtualizedList
         //  refreshing={this.state.refreshing}
         //  onRefresh={this._onRefresh}
          getItem={(data, index) => data[index]}

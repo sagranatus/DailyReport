@@ -1,6 +1,6 @@
 // Home screen
 import React, { Component } from 'react';
-import { Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard, ScrollView } from 'react-native';
+import { Text, View, FlatList,TouchableOpacity, StyleSheet, Keyboard, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 //import all the components we are going to use.
 import {NavigationEvents} from 'react-navigation'
@@ -73,7 +73,12 @@ export default class TodayPage extends React.Component {
       tableArray: [{
         label: "add table",
         value: "add table"
-      }]
+      }],
+      blacklist: [{ 
+        start: new Date().setDate(new Date().getDate() +1),
+        end: new Date().setDate(new Date().getDate() +1000)
+      }],
+      initialLoading:true
     };   
     
     this.getTableDB = this.getTableDB.bind(this)
@@ -150,6 +155,7 @@ export default class TodayPage extends React.Component {
 
   //선택된 table에 대해서 tableDB 가져옴
   getTableDB(table_name){
+    this.setState({initialLoading:true})
     console.log("thisMonth - getTableDB",this.state.thisMonth)
     const setColumn = (column) => this.setState({column: column})
     const getValue = (table_id) => this.getValues(table_id, this.state.selectedDate);
@@ -196,11 +202,11 @@ export default class TodayPage extends React.Component {
                         // setState columns에 삽입
                         setColumn(columns)  
                         // selects 정보 가져오기
-                        getSelects(table_id, columns)          
+                        getSelects(table_id, columns)                               
+                        // 이번달에 대해서 값있는 경우 points 찍도록 함   
+                        getAllPoints(table_id)   
                         // value 가져오기
                         getValue(table_id)
-                        // 이번달에 대해서 값있는 경우 points 찍도록 함   
-                        getAllPoints(table_id)
                        }              
                     } 
                   }
@@ -259,6 +265,15 @@ export default class TodayPage extends React.Component {
 
 //값 가져오기
   getValues(table_id, date){ 
+    // 값이 없는 경우는 비우기 위해서 먼서 값 비움
+    this.state.column.map(( item, key ) =>
+    {      
+      console.log("column, value(this.state.column) check - getValues", item.column +"|"+ this.state[item.column])  
+      // checkbox인 경우에 undefined인 경우 false를 삽입한다.
+        this.setState({[item.column]:undefined})
+      })
+             
+
     //일단 모든 값 제거
    for(var j=0; j<arrays.length; j++){
     arrays[j]["value"] = ""
@@ -266,7 +281,7 @@ export default class TodayPage extends React.Component {
    
    //삭제된 컬럼 배열 비우기
    arrays_removed.length = 0 
-
+   const initialLoading = this.state.initialLoading
    const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
    const setColor = (_var1) => this.setState({backColor: _var1})   
    const Exist = (_var) =>  this.setState({dataExist : _var})  
@@ -326,11 +341,18 @@ export default class TodayPage extends React.Component {
              } 
              // 모두 가져온 뒤에 dataExist setState()
              Exist(true)
+             if(initialLoading ){
+              setValue("initialLoading", false)
+             }
+             
            }else{  
               // 값이 없는 경우에는 색상, readonly, dataExist setState()
                setColor('#ECF8E0')       
                setValue('readonly', false)    
                Exist(false)
+               if(initialLoading ){
+                setValue("initialLoading", false)
+               }
            }
          }
        )
@@ -420,28 +442,29 @@ recordFunc = (RecordDates) => {
     // 테이블 add된 경우 add된 테이블에 대한 정보를 가져옴
     const { params } = this.props.navigation.state;
     if(params != null){
-      console.log("navigation params existed : ",params.otherParam)     
-      var weekEngShortName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
-      var date = new Date();
-      var year = date.getFullYear();
-      var month = date.getMonth()+1
-      var day = date.getDate();
-      if(month < 10){
-          month = "0"+month;
-      }
-      if(day < 10){
-          day = "0"+day;
-      } 
-      var today = year+"-"+month+"-"+day
-      var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
-  
-      AsyncStorage.getItem('table', (err, result) => {
-        this.getTableName(result)
-          this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
-          this.getTableDB(result)            
-        }) 
-      
-      }
+      console.log("navigation params existed : ",params.otherParam)    
+      if(params.otherParam == "fromAddtable" || params.otherParam == "fromUpdatetable" ){
+        var weekEngShortName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth()+1
+        var day = date.getDate();
+        if(month < 10){
+            month = "0"+month;
+        }
+        if(day < 10){
+            day = "0"+day;
+        } 
+        var today = year+"-"+month+"-"+day
+        var today_show = year+"."+month+"."+day+". " + weekEngShortName[date.getDay()];
+    
+        AsyncStorage.getItem('table', (err, result) => {
+          this.getTableName(result)
+            this.setState({table:result, today: today, today_show: today_show, selectedDate: today, thisMonth: month})    
+            this.getTableDB(result)            
+          })         
+        }
+      }      
   }
 
   
@@ -543,6 +566,20 @@ recordFunc = (RecordDates) => {
   
   // edit value 누르면 values 가져오는 이벤트 - 각 column value setState() 를 위해서 필요 // 그냥 값을 가져올때는 setState할 필요없게 하기 위해
  getValuesForUpdate(table_id, date){ 
+
+  var y = date.substr(0,4),
+  m = date.substr(5,2)-1,
+  d = date.substr(8,2);
+  var selected = new Date(y,m,d);
+ // alert(selected)
+  this.setState({blacklist:[{ 
+    start: new Date().setDate(selected.getDate()-1000),
+    end: new Date().setDate(selected.getDate() -1)
+  }, { 
+    start: new Date().setDate(selected.getDate()+1),
+    end: new Date().setDate(selected.getDate() +1000)
+  }]})
+
   const setValue = (_var1, _var2) => this.setState({[_var1]: _var2})
   db.transaction(tx => {
       db.transaction(function(tx) {
@@ -693,46 +730,55 @@ recordFunc = (RecordDates) => {
   // 달력관련이벤트 - 날짜선택시 getvalues
   onDateSelect(date){
     Keyboard.dismiss()
-    var year = date.getFullYear();
-    var month = date.getMonth()+1
-    var day = date.getDate();
-    if(month < 10){
-        month = "0"+month;
-    }
-    if(day < 10){
-        day = "0"+day;
-    } 
-    var selectedDate = year+"-"+month+"-"+day
-    console.log(selectedDate)
-    this.setState({selectedDate: selectedDate})
-    this.getValues(this.state.table_id, selectedDate)
-
-    //만약 이동한 날짜가 일요일이나 월요일인 경우에 월이 다르면 getAllPoints 가져옴
-    if(date.getDay() == 0 || date.getDay() == 1){
-      var month = date.getMonth()+1   
+    if(this.state.showUpdate) {
+      alert("please update values!")
+    }else{
+      var year = date.getFullYear();
+      var month = date.getMonth()+1
+      var day = date.getDate();
       if(month < 10){
           month = "0"+month;
       }
-      if(month !== this.state.thisMonth){
-        this.setState({thisMonth: month})
-        this.getAllPoints(this.state.table_id, month)
-      }    
+      if(day < 10){
+          day = "0"+day;
+      } 
+      var selectedDate = year+"-"+month+"-"+day
+      console.log(selectedDate)
+      this.setState({selectedDate: selectedDate})
+      this.getValues(this.state.table_id, selectedDate)
+  
+      //만약 이동한 날짜가 일요일이나 월요일인 경우에 월이 다르면 getAllPoints 가져옴
+      if(date.getDay() == 0 || date.getDay() == 1){
+        var month = date.getMonth()+1   
+        if(month < 10){
+            month = "0"+month;
+        }
+        if(month !== this.state.thisMonth){
+          this.setState({thisMonth: month})
+          this.getAllPoints(this.state.table_id, month)
+        }    
+      }
     }
+    
   }
 
 // 달력관련이벤트 - 화살표 전후 선택시
   onWeekendSelect(date){
-  //  var date = date.setDate(date.getDate() + 3)
-    console.log("selected - onWeekendSelect")
-    date.setDate(date.getDate() + 6)
-    var month = date.getMonth()+1   
-    if(month < 10){
-        month = "0"+month;
-    }
-    // 다른 월인 경우에 getAllPoints 다시 가져옴. thisMonth setting
-    if(this.state.thisMonth !== month){
-      this.setState({thisMonth: month})
-      this.getAllPoints(this.state.table_id, month)
+    if(this.state.showUpdate) {
+      alert("please update values!")
+    }else{
+    //  var date = date.setDate(date.getDate() + 3)
+      console.log("selected - onWeekendSelect")
+      date.setDate(date.getDate() + 6)
+      var month = date.getMonth()+1   
+      if(month < 10){
+          month = "0"+month;
+      }
+      // 다른 월인 경우에 getAllPoints 다시 가져옴. thisMonth setting
+      if(this.state.thisMonth !== month){
+        this.setState({thisMonth: month})
+        this.getAllPoints(this.state.table_id, month)
+      }
     }
   }
 
@@ -756,23 +802,36 @@ recordFunc = (RecordDates) => {
         break;
       case SWIPE_LEFT:
         // 왼쪽으로 움직일경우 날짜 하루더한 뒤에 그날짜 선택이벤트, 일요일인 경우에 updateWeekView
-       D.setDate(D.getDate() + 1)
-       if (this.calendar !== null) {
-        this.calendar.setSelectedDate(D)	
-      //  console.log(D.getDay())
-       if(D.getDay() ==6){
-          this.calendar.updateWeekView
-        }
+        if(this.state.showUpdate) {
+         // alert("please update values!")
+        }else{
+          D.setDate(D.getDate() + 1)
+          if(new Date() < D){
+            // 오늘날짜 이후일경우는 움직이지 않게!
+          }else{
+            if (this.calendar !== null) {
+              this.calendar.setSelectedDate(D)	
+            //  console.log(D.getDay())
+            if(D.getDay() ==6){
+                this.calendar.updateWeekView
+              }
+            }
+          }
+          
       //  
       }
         break;
       case SWIPE_RIGHT:
         // 오른쪽으로 움직일경우 날짜 하루 뺀 뒤에 그날짜 선택이벤트, 월요일인 경우에 updateWeekView
-        D.setDate(D.getDate() - 1)
-        if (this.calendar !== null) {
-          this.calendar.setSelectedDate(D)	
-           if(D.getDay() == 0){
-            this.calendar.updateWeekView
+        if(this.state.showUpdate) {
+        //  alert("please update values!")
+        }else{
+          D.setDate(D.getDate() - 1)
+          if (this.calendar !== null) {
+            this.calendar.setSelectedDate(D)	
+            if(D.getDay() == 0){
+              this.calendar.updateWeekView
+            }
           }
         }
         break;
@@ -780,17 +839,24 @@ recordFunc = (RecordDates) => {
   }
     
   render() {
-    return (        
+    return (
+      <View style={{flex:1}}>
+      <View style={this.state.initialLoading ? styles.loadingContainer : {display:'none'}}>
+      <ActivityIndicator
+        animating
+        size="large"
+        color="#C8C8C8"
+        {...this.props}
+      />      
+    </View>
+      
       <GestureRecognizer
       onSwipe={(direction, state) => this.onSwipe(direction, state)}
       config={{
         velocityThreshold: 0.3,
         directionalOffsetThreshold: 80
       }}
-      style={{
-        flex: 1
-      }}
-      >   
+      style={!this.state.initialLoading ? {flex:1} : {display:'none'}}> 
       <ScrollView style={{ flex: 1}}>
         <NavigationEvents
       onWillFocus={payload => {console.log(payload),
@@ -832,20 +898,25 @@ recordFunc = (RecordDates) => {
         selectedDate={this.state.selectedDate}
        // calendarAnimation={{type: 'sequence', duration:5}}
         daySelectionAnimation={{type: 'background', duration: 300, highlightColor: this.state.backColor}}
-        onDateSelected={(date)=>this.onDateSelect(date._d)}
+        onDateSelected={this.state.showUpdate ? null : (date)=>this.onDateSelect(date._d)}
         markedDates={ this.state.records }
+        datesBlacklist={this.state.blacklist}
         markedDatesStyle={{position:'absolute'}}
-        onWeekChanged={(date)=>this.onWeekendSelect(date._d)}
+        onWeekChanged={this.state.showUpdate ? null : (date)=>this.onWeekendSelect(date._d)}
         style={{height:100, paddingTop: 0, paddingBottom: 10}}
+      //  style={!this.state.dataExist ? {height:100, paddingTop: 0, paddingBottom: 10, backgroundColor:"#298A08"} : this.state.showUpdate ? {height:100, paddingTop: 0, paddingBottom: 10, backgroundColor:"#01579b"}: {height:100, paddingTop: 0, paddingBottom: 10} }
       />
         <Text style={this.state.table == undefined ? {} : {display:'none'}}>Please add table</Text>
+        <View style={!this.state.dataExist ? {flex:1, borderWidth:10, borderColor:"#298A08"} : this.state.showUpdate ? {flex:1, borderWidth:10, borderColor:"#01579b"}: {flex:1} }>
         <CustomListview
           tableName={this.state.table}
           itemList={arrays}
           date={this.state.selectedDate}
           readonly={this.state.readonly}
+          showUpdate={this.state.showUpdate}
           onChange = {(title, value) => this.setState({[title]:value}) }         
         />
+        </View>
         <View  style={arrays_removed.length == 0 ? {display:'none'} : {borderTopColor:'#000', borderTopWidth:0.5, marginTop:10}}>   
         <Text>Removed column Data</Text>        
           <CustomListview         
@@ -863,20 +934,34 @@ recordFunc = (RecordDates) => {
         onPress={()=> this.InsertValue(this.state.selectedDate)} 
         >
           <Text style={{color:"#fff", textAlign:'center'}}>
-          add today values
+          add values
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
         activeOpacity = {0.9}        
-        style={this.state.dataExist && !this.state.showUpdate ? styles.Button : {display:'none'}}
+        style={this.state.dataExist && !this.state.showUpdate ? [styles.Button, {marginTop:30}] : {display:'none'}}
         onPress={()=> [this.setState({readonly: false, showUpdate: true}),  this.getValuesForUpdate(this.state.table_id, this.state.selectedDate)]} 
         >         
           <Text style={!this.state.showUpdate ? {color:"#fff", textAlign:'center'} : {display:'none'}}>
           edit values
           </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+
+        <TouchableOpacity 
+        activeOpacity = {0.9}        
+        style={this.state.dataExist && this.state.showUpdate ? styles.Button : {display:'none'}}
+        onPress={()=> [this.UpdateValue(this.state.selectedDate), this.setState({blacklist:[{ 
+          start: new Date().setDate(new Date().getDate() +1),
+          end: new Date().setDate(new Date().getDate() +1000)
+        }]})]} 
+        >
+          <Text style={{color:"#fff", textAlign:'center'}}>
+          update values
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
           activeOpacity = {0.9}        
           style={this.state.dataExist ? [styles.Button, {backgroundColor:'#fff'}] : {display:'none'}}
           onPress={()=> [this.setState({readonly: false, showUpdate: true}),  this.getValuesForUpdate(this.state.table_id, this.state.selectedDate)]} 
@@ -885,19 +970,10 @@ recordFunc = (RecordDates) => {
           editing...
           </Text>
           </TouchableOpacity>
-
-        <TouchableOpacity 
-        activeOpacity = {0.9}        
-        style={this.state.dataExist && this.state.showUpdate ? styles.Button : {display:'none'}}
-        onPress={()=> this.UpdateValue(this.state.selectedDate)} 
-        >
-          <Text style={{color:"#fff", textAlign:'center'}}>
-          update today values
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
       
       </GestureRecognizer>
+      </View>
     );
   }
 }
@@ -913,6 +989,7 @@ const styles = StyleSheet.create({
 MainContainer :{
   backgroundColor:'#fff', 
   justifyContent: 'center',
+  alignItems:'center',
   flex:1,
   flexDirection: 'row',
   flexWrap: 'wrap',
@@ -931,7 +1008,18 @@ Button:{
   backgroundColor: '#01579b', 
   padding: 10, 
   marginBottom:5, 
-  width:'100%'} 
+  width:'100%'
+},
+loadingContainer: {
+  alignItems: 'center',
+  justifyContent: 'center',
+  flex: 1,
+  marginTop: 0,
+  paddingTop: 20,
+  marginBottom: 0,
+  marginHorizontal: 0,
+  paddingHorizontal: 10
+}
  
 });
 

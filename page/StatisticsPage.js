@@ -9,6 +9,7 @@ import {
     LineChart,
     StackedBarChart
   } from 'react-native-chart-kit'
+import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 var db = openDatabase({ name: 'TableDatabase.db' })
 
 
@@ -23,7 +24,7 @@ constructor(props){
     var monday = new Date(date_mon.setDate(diff));
     monday = this.getDateFormat(monday)
     this.state = {startdate:"", enddate: "", numberArray: [], 
-    chartArray: [], duration:"이번주", thisMonday: monday 
+    chartArray: [], duration:"this week", thisMonday: monday 
     }
 }
 componentWillMount(){
@@ -212,6 +213,7 @@ getStatistics(tableArray){
   
   var numberArray = new Array()
   var numberTitle = new Array()
+  var chartTitle = new Array()
   var chartArray = new Array()
  
   tableArray.map(( item, key ) =>
@@ -282,7 +284,7 @@ getStatistics(tableArray){
           })
           if(sum  > 1){
             var data = {
-              labels: [item.column],
+            //  labels: [item.column],
               legend: selects,
               data: [
                   values
@@ -290,6 +292,7 @@ getStatistics(tableArray){
               barColors: ['#dfe4ea', '#ced6e0', '#a4b0be'],
              }
              chartArray.push(data)
+             chartTitle.push(item.column) 
               console.log("select data - getStatistics", data)
           }
           
@@ -309,18 +312,19 @@ getStatistics(tableArray){
      // console.log("result", item.checkCount)
       if(item.checkCount + item.uncheckCount  > 1){
         var data = {
-            labels: [item.column],
+           // labels: [item.column],
             legend: ["checked", "unchecked"],
             data: [[item.checkCount, item.uncheckCount]],
             barColors: ['#dfe4ea', '#ced6e0'],
           }
           chartArray.push(data)
+          chartTitle.push(item.column) 
           console.log("check box data - getStatistics", data)  
       }
   }
   })      
   // 모두 진행한 뒤에 numberArray, chartArray, numberTitle을 setState
-  this.setState({numberArray:numberArray, chartArray: chartArray, numberTitle: numberTitle}) 
+  this.setState({numberArray:numberArray, chartArray: chartArray, numberTitle: numberTitle, chartTitle:chartTitle}) 
 }
 
 // 이전주 값 가져오기
@@ -343,7 +347,7 @@ getValuesPreviousWeek(table_id, startdate, enddate){
 
   // 첫날이 thisMonday와 같은 경우 이번주로 표시 아닌 경우 duration이에 맞게 수정
   if(this.state.thisMonday == start){
-    this.setState({startdate_: start, enddate_: end, startdate: start, enddate: end, duration:"이번주"})
+    this.setState({startdate_: start, enddate_: end, startdate: start, enddate: end, duration:"this week"})
   }else{
     this.setState({startdate_: start, enddate_: end, startdate: start, enddate: end, duration:start+"~"+end})
   }
@@ -373,13 +377,33 @@ getValuesNextWeek(table_id, startdate, enddate){
   end = this.getDateFormat(end)
 
   if(this.state.thisMonday == start){
-    this.setState({startdate_: start, enddate_: end, startdate: start, enddate: end, duration:"이번주"})
+    this.setState({startdate_: start, enddate_: end, startdate: start, enddate: end, duration:"this week"})
   }else{
     this.setState({startdate_: start, enddate_: end, startdate: start, enddate: end, duration:start+"~"+end})
   }
   console.log("getValuesPreviousWeek", start + "|" + end)
   this.getValues(table_id, start, end)
 }
+
+  // swipe event
+  onSwipe(gestureName, gestureState) {
+    const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
+    this.setState({gestureName: gestureName});
+    switch (gestureName) {
+      case SWIPE_UP:
+       // this.setState({backgroundColor: 'red'});
+        break;
+      case SWIPE_DOWN:
+       // this.setState({backgroundColor: 'green'});
+        break;
+      case SWIPE_LEFT:
+        this.getValuesNextWeek(this.state.table_id, this.state.startdate, this.state.enddate)
+        break;
+      case SWIPE_RIGHT:
+        this.getValuesPreviousWeek(this.state.table_id, this.state.startdate, this.state.enddate)
+        break;
+    }
+  }
 
   render() {
 
@@ -395,17 +419,18 @@ getValuesNextWeek(table_id, startdate, enddate){
             color:"#000",
             textSize:17,
             fontColor: "#000",
-            textColor:"#000"
+            textColor:"#000",
+            margin:10
           }
       }
-    const screenWidth = Dimensions.get('window').width
+    const screenWidth = Dimensions.get('window').width - 40
     let numArray;
     if(this.state.numberArray.length !== 0){ 
     console.log("!!!!!!!!!!!!", this.state.numberArray)
     numArray = this.state.numberArray.map(( item, key ) =>
     { 
           return (
-          <View style={{color:"#000"}} key={key}>         
+          <View style={{color:"#000",  borderRadius: 5, backgroundColor: '#FFF',elevation: 2, margin:10, marginTop:0}} key={key}>         
           <LineChart
           key={key}
           data={item}
@@ -414,7 +439,7 @@ getValuesNextWeek(table_id, startdate, enddate){
           chartConfig={chartConfig}
           bezier
         />
-         <Text style={{textAlign:"center", fontSize:16}}>[ {this.state.numberTitle[key]} ]</Text>
+         <Text style={{textAlign:"center", fontSize:15, marginTop:-10, marginBottom:10}}>- {this.state.numberTitle[key]} -</Text>
         </View>)
         
     })
@@ -426,23 +451,35 @@ getValuesNextWeek(table_id, startdate, enddate){
     chrtArray = this.state.chartArray.map(( item, key ) =>
     { 
       return (
-        <StackedBarChart
+        <View style={{color:"#000",   borderRadius: 5, backgroundColor: '#FFF',elevation: 2, margin:10, marginTop:0}} key={key}>         
+      <StackedBarChart
          key={key}
         style={{color:"#000"}}
         data={item}
         width={screenWidth}
         height={220}
         chartConfig={chartConfig}
-        />)
+        />
+       <Text style={{textAlign:"center", fontSize:15, marginTop:-30, marginBottom:10}}>- {this.state.chartTitle[key]} - </Text>
+      </View>)
     
     })
   }
     return (
-        <View style={{ flex: 1}}>
+      <GestureRecognizer
+      onSwipe={(direction, state) => this.onSwipe(direction, state)}
+      config={{
+        velocityThreshold: 0.3,
+        directionalOffsetThreshold: 80
+      }}
+      style={{
+        flex: 1
+      }}
+      >   
         <TouchableOpacity
               activeOpacity = {0.9}
               style={{backgroundColor: '#01579b', padding: 10}}
-              onPress={() =>  this.props.navigation.navigate("TodayScreen")} 
+              onPress={() =>  this.props.navigation.navigate("TodayScreen", {otherParam: "statistics"})} 
               >
               <Text style={{color:"#FFF", textAlign:'left'}}>
                   {"<"} BACK
@@ -450,7 +487,7 @@ getValuesNextWeek(table_id, startdate, enddate){
           </TouchableOpacity>  
         <ScrollView style={{ flex: 1}}>
       
-      <View style={{flexDirection: "row", flex:1, flexWrap: 'wrap'}}>
+      <View style={{display:'none', flexDirection: "row", flex:1, flexWrap: 'wrap'}}>
       <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'left'}}>
         <TouchableOpacity 
           activeOpacity = {0.9}
@@ -460,7 +497,7 @@ getValuesNextWeek(table_id, startdate, enddate){
           </TouchableOpacity>
       </View>
       <View style={{flexDirection: "column", flexWrap: 'wrap', width: '80%', float:'center'}}>
-        <Text style={{textAlign:"center", fontSize:17, marginTop:10}}>{this.state.duration}</Text>
+        <Text style={{textAlign:"left", fontSize:17, marginTop:10}}>{this.state.duration}</Text>
       </View>
       <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'right'}}>
         <TouchableOpacity 
@@ -471,10 +508,21 @@ getValuesNextWeek(table_id, startdate, enddate){
           </TouchableOpacity>
       </View>
       </View>
-      <View style={{flexDirection: "row", flex:1, flexWrap: 'wrap'}}>
-      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%', float:'left'}}>
+      <Text style={{textAlign:"left", fontSize:15, marginTop:5, color:'#01579b', marginLeft:'12%'}}>{this.state.duration == "this week" ? this.state.duration : ""}</Text>
+      
+      <View style={{flexDirection: "row", flex:1, flexWrap: 'wrap', marginTop:5, marginBottom:20}}>
+      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'left'}}>
+        <TouchableOpacity 
+          activeOpacity = {0.9}
+          onPress={()=> this.getValuesPreviousWeek(this.state.table_id, this.state.startdate, this.state.enddate)} // insertComment
+          >      
+          <Icon name={'chevron-thin-left'} size={20} color={"#000"} style={{paddingTop:8, textAlign:'center'}} />
+          </TouchableOpacity>
+      </View>
+      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '36%', float:'left' , alignItems:"center", justifyContent:'center'}}>
       <DatePicker
     //    style={{width: 200}}
+        showIcon = {false}
         date={this.state.startdate_}
         mode="date"
         placeholder="select date"
@@ -484,22 +532,26 @@ getValuesNextWeek(table_id, startdate, enddate){
         confirmBtnText="Confirm"
         cancelBtnText="Cancel"
         customStyles={{
-          dateIcon: {
-            position: 'absolute',
+         /*  dateIcon: {
+           position: 'absolute',
             left: 0,
             top: 4,
             marginLeft: 0
-          },
+          }, */
           dateInput: {
-            marginLeft: 36
+            textAlign:"center"
           }
           // ... You can check the source to find the other keys.
         }}
-        onDateChange={(date) => {this.setState({startdate_: date})}}
+        onDateChange={(date) => {[this.setState({startdate_: date}), this.getValues(this.state.table_id, this.state.startdate_, this.state.enddate_)]}}
       />
       </View>
-      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '40%', float:'left'}}>
+      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '8%', float:'left', alignItems:"center", justifyContent:'center', }}>
+        <Text style={{fontSize:20, marginTop:'1%', textAlign:'center'}}> ~ </Text>
+      </View>
+      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '36%', float:'left', alignItems:"center", justifyContent:'center'}}>
         <DatePicker
+        showIcon = {false}
         //style={{width: 200}}
         date={this.state.enddate_}
         mode="date"
@@ -510,30 +562,27 @@ getValuesNextWeek(table_id, startdate, enddate){
         confirmBtnText="Confirm"
         cancelBtnText="Cancel"
         customStyles={{
-          dateIcon: {
+         /* dateIcon: {
             position: 'absolute',
             left: 0,
             top: 4,
             marginLeft: 0
-          },
+          }, */
           dateInput: {
-            marginLeft: 36
+            margin:'auto'
           }
           // ... You can check the source to find the other keys.
         }}
-        onDateChange={(date) => {this.setState({enddate_: date})}}
+        onDateChange={(date) => {[this.setState({enddate_: date}), this.getValues(this.state.table_id, this.state.startdate_, this.state.enddate_)]}}
       />
       </View>
-        <View style={{flexDirection: "column", flexWrap: 'wrap', width: '20%', float:'left'}}>                
+      <View style={{flexDirection: "column", flexWrap: 'wrap', width: '10%', float:'left'}}>
         <TouchableOpacity 
-        activeOpacity = {0.9}
-        style={styles.Button}
-        onPress={()=> this.getValues(this.state.table_id, this.state.startdate_, this.state.enddate_)} 
-        >
-          <Text style={{color:"#fff", textAlign:'center'}}>
-            get
-          </Text>
-        </TouchableOpacity>
+          activeOpacity = {0.9}
+          onPress={()=> this.getValuesNextWeek(this.state.table_id, this.state.startdate, this.state.enddate)} // insertComment
+          >      
+          <Icon name={'chevron-thin-right'} size={20} color={"#000"} style={{paddingTop:8, textAlign:'center'}} />
+          </TouchableOpacity>
       </View>
       </View>
       
@@ -543,9 +592,9 @@ getValuesNextWeek(table_id, startdate, enddate){
       {
        chrtArray
        }
-      <Text style={this.state.numberArray.length == 0 && this.state.chartArray.length == 0 ? {} : {display:"none"}}>data is empty or one</Text>
+      <Text style={this.state.numberArray.length == 0 && this.state.chartArray.length == 0 ? {textAlign:"center", marginTop:20} : {display:"none"}}>data is empty or one data.</Text>
        </ScrollView>      
-      </View>
+      </GestureRecognizer>
     );
   }
 }
